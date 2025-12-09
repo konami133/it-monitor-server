@@ -1,4 +1,4 @@
-// server.js (Pro Version)
+// server.js (Final Version)
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -9,37 +9,37 @@ const mongoose = require('mongoose');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// เพิ่ม limit เพื่อให้รับรูปภาพขนาดใหญ่ได้ (สำคัญมากสำหรับ Screenshot)
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(cors());
+app.use(express.static('public'));
+
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('✅ MongoDB Connected'))
     .catch(err => console.error(err));
 
-// 1. อัปเกรด Schema เพิ่มฟิลด์ใหม่
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
-    friendlyName: String, // ชื่อเรียกง่ายๆ เช่น "เครื่องบัญชี 1"
-    group: String,        // แผนก เช่น "HR", "IT"
-    location: String,     // ตำแหน่ง เช่น "ชั้น 2 โซน A"
+    friendlyName: String,
+    group: String,
+    location: String,     
     ip: String,
+    public_ip: String,    // เพิ่ม: IP จริง
+    location_city: String,// เพิ่ม: เมือง
+    isp: String,          // เพิ่ม: ผู้ให้บริการเน็ต
+    lat: Number,          // เพิ่ม: ละติจูด
+    lon: Number,          // เพิ่ม: ลองจิจูด
     os: String,
     cpu: String,
     ram: String,
-    windows_update: String,
-// เพิ่ม field ใหม่สำหรับ Auto Location
-    public_ip: String,
-    location_city: String, // เช่น "Bangkok, Thailand"
-    isp: String,           // เช่น "True Internet"
-    lat: Number,
-    lon: Number,
     last_seen: { type: Date, default: Date.now },
-    pendingCommand: String // คำสั่งที่รอส่งให้เครื่องลูก (reboot, shutdown)
+    pendingCommand: String, // คำสั่งที่รอส่ง
+    screenshot: String      // เก็บรูปภาพ Base64
 });
 
 const Device = mongoose.model('Device', deviceSchema);
 
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static('public'));
-
+// Middleware Login
 const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -56,36 +56,35 @@ const authenticateJWT = (req, res, next) => {
 
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    // Hardcode user ไว้ก่อน (ของจริงควรเก็บใน DB)
     if (username === "admin" && password === "password123") {
-        const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: '2h' });
+        const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: '12h' });
         res.json({ token });
     } else {
         res.status(401).send('Login Failed');
     }
 });
 
-// 2. Agent Report (อัปเกรดให้ส่งคำสั่งกลับไปหา Agent)
+// API: รับรายงานสถานะจาก Agent
 app.post('/api/report', async (req, res) => {
     const data = req.body;
     try {
-        // หาเครื่องและอัปเดตสถานะ
         const device = await Device.findOneAndUpdate(
             { hostname: data.hostname },
             { ...data, last_seen: new Date() },
             { upsert: true, new: true }
         );
 
-        // เช็คว่ามีคำสั่งค้างอยู่ไหม?
+        // เช็คว่ามีคำสั่งค้างไหม?
         let responsePayload = { message: 'received' };
         if (device.pendingCommand) {
             console.log(`Sending command '${device.pendingCommand}' to ${device.hostname}`);
             responsePayload.command = device.pendingCommand;
-            
-            // ส่งคำสั่งแล้ว ให้ลบคำสั่งทิ้งทันที
-            await Device.updateOne({ hostname: data.hostname }, { $unset: { pendingCommand: "" } });
+            // ถ้าเป็นคำสั่ง screenshot อย่าเพิ่งลบ รอรับรูปก่อน
+            // แต่ถ้าเป็น reboot/shutdown ลบได้เลย
+            if(device.pendingCommand !== 'screenshot') {
+                await Device.updateOne({ hostname: data.hostname }, { $unset: { pendingCommand: "" } });
+            }
         }
-
         res.json(responsePayload);
     } catch (error) {
         console.error(error);
@@ -93,30 +92,51 @@ app.post('/api/report', async (req, res) => {
     }
 });
 
-app.get('/api/devices', authenticateJWT, async (req, res) => {
-    const devices = await Device.find();
-    const now = new Date();
-    const deviceList = devices.map(d => {
-        const dev = d.toObject();
-        const diff = (now - new Date(dev.last_seen)) / 1000;
-        dev.status = diff > 120 ? 'offline' : 'online';
-        return dev;
-    });
-    res.json(deviceList);
+// API: รับรูป Screenshot (สำคัญ!)
+app.post('/api/upload-screen', async (req, res) => {
+    const { hostname, image } = req.body;
+    console.log(`📸 Received screenshot from ${hostname}`);
+    try {
+        await Device.updateOne(
+            { hostname }, 
+            { 
+                screenshot: image, 
+                $unset: { pendingCommand: "" } // ได้รูปแล้ว ค่อยลบคำสั่งทิ้ง
+            }
+        );
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Upload error:", error);
+        res.status(500).send("Upload failed");
+    }
 });
 
-// 3. API สำหรับแก้ไขชื่อ/กลุ่ม (Edit Device)
+app.get('/api/devices', authenticateJWT, async (req, res) => {
+    try {
+        const devices = await Device.find();
+        const now = new Date();
+        const deviceList = devices.map(d => {
+            const dev = d.toObject();
+            const diff = (now - new Date(dev.last_seen)) / 1000;
+            dev.status = diff > 120 ? 'offline' : 'online';
+            return dev;
+        });
+        res.json(deviceList);
+    } catch (error) {
+        res.status(500).send('Error');
+    }
+});
+
 app.post('/api/devices/update', authenticateJWT, async (req, res) => {
     const { hostname, friendlyName, group, location } = req.body;
     await Device.updateOne({ hostname }, { friendlyName, group, location });
     res.json({ success: true });
 });
 
-// 4. API สำหรับสั่ง Remote (Queue Command)
 app.post('/api/devices/command', authenticateJWT, async (req, res) => {
-    const { hostname, command } = req.body; // command: 'reboot' or 'shutdown'
+    const { hostname, command } = req.body;
     await Device.updateOne({ hostname }, { pendingCommand: command });
-    res.json({ success: true, message: `Command ${command} queued for ${hostname}` });
+    res.json({ success: true });
 });
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
