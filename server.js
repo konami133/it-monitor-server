@@ -11,6 +11,7 @@ const port = process.env.PORT || 3000;
 
 // เพิ่ม limit เพื่อให้รับรูปภาพขนาดใหญ่ได้ (สำคัญมากสำหรับ Screenshot)
 app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 app.use(express.static('public'));
 
