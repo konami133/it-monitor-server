@@ -116,24 +116,51 @@
     </div>
 
     <script>
-        const API_URL = '/api'; // ใช้ Relative path เพราะอยู่โดเมนเดียวกัน
+        // ⚠️ แก้ตรงนี้สำคัญมาก!
+// ถ้าคุณเปิดไฟล์ index.html ในเครื่องตัวเอง (Local) ให้ใส่ Link เต็มของ Render
+// แต่ถ้าเอาไฟล์ขึ้น Render แล้ว ให้ใช้แค่ '/api' ได้
+const API_URL = "https://it-monitor-server.onrender.com/api"; 
+// (อย่าลืมเติม /api ต่อท้าย และอย่ามี / ปิดท้ายอีก)
 
         // --- AUTH ---
         async function login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const res = await fetch(`${API_URL}/login`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: u, password: p })
-            });
-            if(res.ok){
-                const data = await res.json();
-                localStorage.setItem('token', data.token);
-                document.getElementById('loginModal').classList.add('hidden');
-                fetchDevices();
-                setInterval(fetchDevices, 5000);
-            } else { alert('Login Failed'); }
+    const u = document.getElementById('username').value;
+    const p = document.getElementById('password').value;
+    
+    // เพิ่มการแจ้งเตือนถ้าลืมกรอก
+    if(!u || !p) { alert("Please enter username and password"); return; }
+
+    console.log("Attempting to login to:", `${API_URL}/login`); // Log ดู URL
+
+    try {
+        const res = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: u, password: p })
+        });
+
+        if(res.ok){
+            const data = await res.json();
+            console.log("Login Success:", data);
+            localStorage.setItem('token', data.token);
+            
+            // ซ่อน Modal และโหลดข้อมูล
+            document.getElementById('loginModal').classList.add('hidden');
+            alert("Login Successful! 🎉"); // แจ้งเตือนหน่อย
+            fetchDevices();
+            setInterval(fetchDevices, 5000);
+        } else {
+            // กรณี Server ตอบกลับมาว่าผิด (เช่น 401)
+            const errorText = await res.text();
+            console.error("Server Error:", errorText);
+            alert(`Login Failed: Username or Password incorrect`);
         }
+    } catch (error) {
+        // กรณี Network Error หรือ URL ผิด (เช่น เน็ตหลุด, Server ดับ)
+        console.error("Network Error:", error);
+        alert(`Cannot connect to Server!\nCheck F12 Console for details.\nError: ${error.message}`);
+    }
+}
 
         function logout() { localStorage.removeItem('token'); location.reload(); }
 
