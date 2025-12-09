@@ -139,5 +139,16 @@ app.post('/api/devices/command', authenticateJWT, async (req, res) => {
     await Device.updateOne({ hostname }, { pendingCommand: command });
     res.json({ success: true });
 });
-
+// เพิ่ม API สำหรับลบเครื่อง (Delete Device)
+app.delete('/api/devices/:hostname', authenticateJWT, async (req, res) => {
+    const { hostname } = req.params;
+    try {
+        await Device.deleteOne({ hostname });
+        console.log(`🗑️ Deleted device: ${hostname}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error deleting device');
+    }
+});
 app.listen(port, () => console.log(`Server running on port ${port}`));
