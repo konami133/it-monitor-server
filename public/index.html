@@ -29,13 +29,16 @@
                 IT MONITOR
             </div>
             <div class="p-4"><button onclick="filterGroup('ALL')" id="btn-ALL" class="w-full text-left px-4 py-2 hover:bg-slate-800 rounded group-active">All Devices</button></div>
-            <div class="flex-1 overflow-y-auto p-4" id="groupList"></div>
+            <div class="flex-1 overflow-y-auto p-4">
+                <p class="text-xs uppercase text-slate-500 font-bold mb-2">Groups / Dept</p>
+                <div id="groupList" class="space-y-1"></div>
+            </div>
             <div class="p-4 border-t border-slate-700"><button onclick="logout()" class="text-red-400 w-full text-left">Logout</button></div>
         </aside>
 
         <div class="flex-1 flex flex-col overflow-hidden">
             <header class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-10">
-                <h2 class="text-lg font-semibold text-gray-700" id="headerTitle">Overview</h2>
+                <h2 class="text-lg font-semibold text-gray-700" id="headerTitle">All Devices Overview</h2>
                 <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">ON</div>
             </header>
             <main class="flex-1 overflow-x-hidden overflow-y-auto p-6">
@@ -45,13 +48,24 @@
                     <div class="bg-white p-5 rounded border-l-4 border-red-500 shadow-sm"><div>Offline</div><div class="text-2xl font-bold text-red-600" id="offlineCount">0</div></div>
                 </div>
                 <div class="bg-white rounded shadow overflow-hidden">
-                    <div class="px-6 py-4 border-b flex justify-between items-center"><h3 class="font-bold text-gray-700">Devices</h3><button onclick="fetchDevices()" class="text-blue-500"><i class="fas fa-sync"></i> Refresh</button></div>
-                    <table class="w-full">
-                        <thead class="bg-gray-100 text-xs font-bold text-gray-600 uppercase">
-                            <tr><th class="px-6 py-3 text-left">Status</th><th class="px-6 py-3 text-left">Name</th><th class="px-6 py-3 text-left">Location</th><th class="px-6 py-3 text-left">Info</th><th class="px-6 py-3 text-center">Actions</th></tr>
-                        </thead>
-                        <tbody id="deviceTable" class="divide-y divide-gray-100"></tbody>
-                    </table>
+                    <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+                        <h3 class="font-bold text-gray-700">Device List</h3>
+                        <button onclick="fetchDevices()" class="text-blue-500 hover:text-blue-700 text-sm font-medium"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full whitespace-no-wrap">
+                            <thead>
+                                <tr class="bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    <th class="px-6 py-3">Status</th>
+                                    <th class="px-6 py-3">Device Name</th>
+                                    <th class="px-6 py-3">Group / Location</th>
+                                    <th class="px-6 py-3">System Info (HDD/Update)</th>
+                                    <th class="px-6 py-3 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deviceTable" class="bg-white divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>
@@ -71,54 +85,47 @@
                         <p class="text-gray-500" id="det-hostname">-</p>
                     </div>
                 </div>
-                
                 <div class="space-y-4 bg-gray-50 p-6 rounded-lg border border-gray-200 text-sm">
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2">
-                        <span class="text-gray-500">Processor</span>
-                        <span class="col-span-2 font-medium text-gray-800" id="det-cpu">-</span>
-                    </div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2">
-                        <span class="text-gray-500">Installed RAM</span>
-                        <span class="col-span-2 font-medium text-gray-800" id="det-ram">-</span>
-                    </div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2">
-                        <span class="text-gray-500">Graphics Card</span>
-                        <span class="col-span-2 font-medium text-gray-800" id="det-gpu">-</span>
-                    </div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2">
-                        <span class="text-gray-500">Storage</span>
-                        <span class="col-span-2 font-medium text-gray-800" id="det-storage">-</span>
-                    </div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2">
-                        <span class="text-gray-500">System Type</span>
-                        <span class="col-span-2 font-medium text-gray-800" id="det-os">-</span>
-                    </div>
-                    <div class="grid grid-cols-3 pt-1">
-                        <span class="text-gray-500 font-bold">Serial Number</span>
-                        <span class="col-span-2 font-mono font-bold text-gray-800 tracking-wider" id="det-serial">-</span>
-                    </div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Processor</span><span class="col-span-2 font-medium text-gray-800" id="det-cpu">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">RAM</span><span class="col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">GPU</span><span class="col-span-2 font-medium text-gray-800" id="det-gpu">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Storage Model</span><span class="col-span-2 font-medium text-gray-800" id="det-storage">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
+                    <div class="grid grid-cols-3 pt-1"><span class="text-gray-500 font-bold">S/N</span><span class="col-span-2 font-mono font-bold text-gray-800 tracking-wider" id="det-serial">-</span></div>
                 </div>
-                
-                <div class="mt-6 flex justify-end">
-                    <button class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition" onclick="copySerial()">Copy S/N</button>
-                </div>
+                <div class="mt-6 flex justify-end"><button class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition" onclick="copySerial()">Copy S/N</button></div>
             </div>
         </div>
     </div>
 
-    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"> </div>
-    <div id="screenModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"> </div>
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-96 shadow-xl">
+            <h3 class="text-xl font-bold mb-4">Edit Device</h3>
+            <input type="hidden" id="editHostname">
+            <div class="mb-3"><label class="text-xs text-gray-500 font-bold">Name</label><input type="text" id="editName" class="w-full border p-2 rounded"></div>
+            <div class="mb-3"><label class="text-xs text-gray-500 font-bold">Group</label><input type="text" id="editGroup" class="w-full border p-2 rounded"></div>
+            <div class="mb-4"><label class="text-xs text-gray-500 font-bold">Location</label><input type="text" id="editLocation" class="w-full border p-2 rounded"></div>
+            <div class="flex justify-end space-x-2"><button onclick="closeEditModal()" class="px-4 py-2 text-gray-500 bg-gray-200 rounded">Cancel</button><button onclick="saveDevice()" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div>
+        </div>
+    </div>
+    
+    <div id="screenModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+        <div class="bg-white p-2 rounded-lg max-w-5xl w-full relative mx-4">
+            <button onclick="closeScreenModal()" class="absolute -top-10 right-0 text-white text-xl">Close</button>
+            <div class="flex justify-between items-center mb-2 px-2"><h3 class="font-bold">Remote View</h3><button onclick="refreshScreen()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Capture New</button></div>
+            <div id="screenContainer" class="flex justify-center items-center min-h-[400px] bg-gray-200 rounded overflow-hidden"><span class="text-gray-500 animate-pulse">Waiting...</span></div>
+        </div>
+    </div>
 
     <script>
-        // ⚠️⚠️ แก้ URL ⚠️⚠️
+        // ⚠️⚠️ อย่าลืมแก้ URL ตรงนี้นะครับ ⚠️⚠️
         const API_URL = "https://it-monitor-server.onrender.com/api"; 
 
         let globalDevices = [];
         let currentGroupFilter = 'ALL';
         let currentViewingHost = null;
 
-        // --- AUTH & MAIN ---
-        async function login() { /* ... (โค้ด login เดิม) ... */ 
+        async function login() {
              const u = document.getElementById('username').value;
              const p = document.getElementById('password').value;
              try {
@@ -138,16 +145,20 @@
                 const res = await fetch(`${API_URL}/devices`, { headers: { 'Authorization': `Bearer ${token}` }});
                 const devices = await res.json(); globalDevices = devices;
                 renderSidebarGroups(); renderTable();
+                
+                if(currentViewingHost) {
+                    const target = devices.find(d => d.hostname === currentViewingHost);
+                    if(target && target.screenshot) document.getElementById('screenContainer').innerHTML = `<img src="data:image/jpeg;base64,${target.screenshot}" class="max-w-full h-auto shadow-lg">`;
+                }
             } catch(e) { console.error(e); }
         }
 
-        // --- UI RENDER ---
+        // --- RENDER TABLE (แก้ไขให้โชว์ปุ่มและข้อมูลครบถ้วน) ---
         function renderTable() {
             const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
             let displayDevices = globalDevices;
             if (currentGroupFilter !== 'ALL') displayDevices = globalDevices.filter(d => (d.group || 'Unassigned') === currentGroupFilter);
             
-            // Update Stats
             document.getElementById('totalCount').innerText = displayDevices.length;
             document.getElementById('onlineCount').innerText = displayDevices.filter(d => d.status === 'online').length;
             document.getElementById('offlineCount').innerText = displayDevices.filter(d => d.status !== 'online').length;
@@ -155,33 +166,87 @@
             displayDevices.forEach(d => {
                 const isOnline = d.status === 'online';
                 const statusBadge = isOnline ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
+                const mapLink = (d.lat && d.lon) ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 block"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
+
+                const sysInfo = `
+                    <div class="text-xs text-gray-700 space-y-1">
+                        <div><i class="fas fa-microchip w-3"></i> CPU: ${d.cpu || '0%'} | RAM: ${d.ram || '0%'}</div>
+                        <div class="text-blue-600 truncate max-w-[200px]" title="${d.disk_info || ''}">
+                            <i class="fas fa-hdd w-3"></i> ${d.disk_info ? d.disk_info.split('|')[0] : '-'}
+                        </div>
+                        <div class="${d.last_update === 'Check Failed' ? 'text-red-500' : 'text-green-600'}">
+                            <i class="fab fa-windows w-3"></i> Update: ${d.last_update || '-'}
+                        </div>
+                    </div>
+                `;
                 
+                const locationInfo = `
+                    <div class="text-sm font-semibold text-indigo-700">${d.group || '-'}</div>
+                    <div class="text-xs text-gray-500 font-bold">${d.location || 'Unknown Floor'}</div>
+                    <div class="text-xs text-gray-400">${d.location_city || ''}</div>
+                    ${mapLink}
+                `;
+
+                // ✅ ปุ่ม Actions เรียงกันครบ (ถ้า Offline ปุ่ม Restart/Shutdown จะซ่อนตัวเพื่อความปลอดภัย)
+                const actionButtons = `
+                    <div class="flex justify-center space-x-1">
+                        <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="Details"><i class="fas fa-info-circle"></i></button>
+                        <button onclick="openEdit('${d.hostname}', '${d.friendlyName||''}', '${d.group||''}', '${d.location||''}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200" title="Edit"><i class="fas fa-edit"></i></button>
+                        ${isOnline ? `
+                            <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100" title="Restart"><i class="fas fa-sync"></i></button>
+                            <button onclick="sendCommand('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded hover:bg-red-100" title="Shutdown"><i class="fas fa-power-off"></i></button>
+                            <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100" title="Screen"><i class="fas fa-eye"></i></button>
+                        ` : ''}
+                        <button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100" title="Delete"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+
                 const row = `
                     <tr class="hover:bg-gray-50 border-b border-gray-100">
                         <td class="px-6 py-4 align-top">${statusBadge}</td>
                         <td class="px-6 py-4 align-top">
-                            <div class="font-bold text-gray-800">${d.friendlyName || d.hostname}</div>
-                            <div class="text-xs text-gray-400">${d.hostname}</div>
+                            <div class="font-bold text-gray-800 text-sm">${d.friendlyName || d.hostname}</div>
+                            <div class="text-xs text-gray-400 font-mono">${d.hostname}</div>
                         </td>
-                        <td class="px-6 py-4 align-top text-sm text-gray-600">${d.group || '-'}<br><span class="text-xs text-gray-400">${d.location_city || ''}</span></td>
-                        <td class="px-6 py-4 align-top text-xs text-gray-600">
-                            IP: ${d.ip || '-'}<br>Update: ${d.last_update || '-'}
-                        </td>
-                        <td class="px-6 py-4 align-top text-center">
-                            <button onclick="openDetails('${d.hostname}')" class="text-blue-600 hover:text-blue-800 p-2 bg-blue-50 rounded hover:bg-blue-100 mr-2" title="View Full Specs"><i class="fas fa-info-circle"></i> Details</button>
-                            ${isOnline ? `<button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 p-2"><i class="fas fa-sync"></i></button>` : ''}
-                            <button onclick="deleteDevice('${d.hostname}')" class="text-red-400 p-2"><i class="fas fa-trash"></i></button>
-                        </td>
+                        <td class="px-6 py-4 align-top">${locationInfo}</td>
+                        <td class="px-6 py-4 align-top">${sysInfo}</td>
+                        <td class="px-6 py-4 align-top text-center">${actionButtons}</td>
                     </tr>`;
                 tbody.innerHTML += row;
             });
         }
 
-        // --- NEW: DETAILS MODAL LOGIC ---
-        function openDetails(hostname) {
-            const d = globalDevices.find(dev => dev.hostname === hostname);
-            if(!d) return;
+        function renderSidebarGroups() {
+            const groupListDiv = document.getElementById('groupList');
+            const groups = [...new Set(globalDevices.map(d => d.group || 'Unassigned'))].sort();
+            let html = '';
+            if(groups.includes('Unassigned')) html += createSidebarBtn('Unassigned', 'Unassigned');
+            groups.forEach(g => { if(g !== 'Unassigned') html += createSidebarBtn(g, g); });
+            groupListDiv.innerHTML = html;
+            
+            const btnId = currentGroupFilter === 'ALL' ? 'btn-ALL' : `btn-${currentGroupFilter.replace(/\s/g, '-')}`;
+            const activeBtn = document.getElementById(btnId);
+            if(activeBtn) activeBtn.classList.add('group-active');
+        }
 
+        function createSidebarBtn(label, value) {
+            const count = globalDevices.filter(d => (d.group || 'Unassigned') === value).length;
+            return `<button onclick="filterGroup('${value}')" id="btn-${value.replace(/\s/g, '-')}" class="w-full flex justify-between items-center px-4 py-2 rounded-md hover:bg-slate-800 transition text-left text-sm text-slate-400 hover:text-white mb-1">
+                    <span><i class="fas fa-folder mr-2"></i> ${label}</span><span class="bg-slate-700 text-xs px-2 py-0.5 rounded-full text-slate-300">${count}</span></button>`;
+        }
+
+        function filterGroup(groupName) {
+            currentGroupFilter = groupName;
+            document.querySelectorAll('aside button').forEach(b => b.classList.remove('group-active'));
+            const btnId = currentGroupFilter === 'ALL' ? 'btn-ALL' : `btn-${currentGroupFilter.replace(/\s/g, '-')}`;
+            const activeBtn = document.getElementById(btnId);
+            if(activeBtn) activeBtn.classList.add('group-active');
+            renderTable();
+            document.getElementById('headerTitle').innerText = groupName === 'ALL' ? 'All Devices Overview' : `Group: ${groupName}`;
+        }
+
+        function openDetails(hostname) {
+            const d = globalDevices.find(dev => dev.hostname === hostname); if(!d) return;
             document.getElementById('det-friendlyName').innerText = d.friendlyName || "Unknown Device";
             document.getElementById('det-hostname').innerText = d.hostname;
             document.getElementById('det-cpu').innerText = d.cpu || "Unknown";
@@ -190,25 +255,50 @@
             document.getElementById('det-storage').innerText = d.storage_model || "Unknown";
             document.getElementById('det-os').innerText = d.os || "Unknown";
             document.getElementById('det-serial').innerText = d.serial_number || "Unknown";
-
             document.getElementById('detailsModal').classList.remove('hidden');
         }
-
         function closeDetails() { document.getElementById('detailsModal').classList.add('hidden'); }
-        
-        function copySerial() {
-            const sn = document.getElementById('det-serial').innerText;
-            navigator.clipboard.writeText(sn);
-            alert("Copied: " + sn);
-        }
+        function copySerial() { navigator.clipboard.writeText(document.getElementById('det-serial').innerText); alert("Copied!"); }
 
-        // (Helper Functions: deleteDevice, sendCommand, renderSidebarGroups... เหมือนเดิม)
-        function renderSidebarGroups() { /* ... */ }
-        async function deleteDevice(h) { /* ... */ }
-        async function sendCommand(h,c) { /* ... */ }
-        
-        // Auto Start
-        if(localStorage.getItem('token')) { document.getElementById('loginModal').classList.add('hidden'); document.getElementById('dashboardContent').classList.remove('hidden'); fetchDevices(); setInterval(fetchDevices,5000); }
+        function openEdit(hostname, name, group, loc) {
+            document.getElementById('editHostname').value = hostname;
+            document.getElementById('editName').value = name;
+            document.getElementById('editGroup').value = group;
+            document.getElementById('editLocation').value = loc;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+        function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+        async function saveDevice() {
+            const token = localStorage.getItem('token');
+            const body = { hostname: document.getElementById('editHostname').value, friendlyName: document.getElementById('editName').value, group: document.getElementById('editGroup').value, location: document.getElementById('editLocation').value };
+            await fetch(`${API_URL}/devices/update`, { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`}, body: JSON.stringify(body) });
+            closeEditModal(); fetchDevices();
+        }
+        async function deleteDevice(hostname) {
+            if(!confirm(`⚠️ DELETE "${hostname}"?`)) return;
+            const token = localStorage.getItem('token');
+            await fetch(`${API_URL}/devices/${hostname}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            fetchDevices();
+        }
+        async function sendCommand(hostname, cmd) {
+            if(!confirm(`${cmd.toUpperCase()} ${hostname}?`)) return;
+            const token = localStorage.getItem('token');
+            await fetch(`${API_URL}/devices/command`, { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`}, body: JSON.stringify({ hostname, command: cmd }) });
+            alert("Command Sent!");
+        }
+        async function requestScreenshot(hostname) {
+            currentViewingHost = hostname;
+            document.getElementById('screenModal').classList.remove('hidden');
+            document.getElementById('screenContainer').innerHTML = '<span class="text-gray-500 animate-pulse">Requesting...</span>';
+            await sendCommand(hostname, 'screenshot');
+        }
+        function closeScreenModal() { document.getElementById('screenModal').classList.add('hidden'); currentViewingHost = null; }
+        function refreshScreen() { if(currentViewingHost) requestScreenshot(currentViewingHost); }
+
+        document.getElementById('password').addEventListener('keypress', function (e) { if (e.key === 'Enter') login(); });
+        document.getElementById('username').addEventListener('keypress', function (e) { if (e.key === 'Enter') document.getElementById('password').focus(); });
+
+        if(localStorage.getItem('token')) { document.getElementById('loginModal').classList.add('hidden'); document.getElementById('dashboardContent').classList.remove('hidden'); fetchDevices(); setInterval(fetchDevices, 5000); }
     </script>
 </body>
 </html>
