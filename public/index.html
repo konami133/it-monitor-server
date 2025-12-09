@@ -237,6 +237,7 @@
         }
 
         // --- TABLE RENDER (UPDATED) ---
+       // --- TABLE RENDER (เวอร์ชันใหม่: เพิ่ม HDD + Windows Update) ---
         function renderTable() {
             const tbody = document.getElementById('deviceTable');
             tbody.innerHTML = '';
@@ -258,26 +259,41 @@
                     ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800"><i class="fas fa-check-circle"></i> ON</span>`
                     : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800"><i class="fas fa-times-circle"></i> OFF</span>`;
 
+                // ลิงก์แผนที่ (Map)
                 const mapLink = (d.lat && d.lon) 
-                    ? `<a href="https://www.google.com/maps?q=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
+                    ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold block mt-1"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
+
+                // ✅ ส่วนที่เพิ่มใหม่: แสดง HDD และ Windows Update
+                const sysInfo = `
+                    <div class="text-xs text-gray-700 space-y-1">
+                        <div><i class="fas fa-microchip w-4"></i> CPU: ${d.cpu || '0%'} | RAM: ${d.ram || '0%'}</div>
+                        <div class="text-blue-600" title="${d.disk_info || ''}">
+                            <i class="fas fa-hdd w-4"></i> ${d.disk_info ? d.disk_info.split('|')[0] : '-'} 
+                            ${d.disk_info && d.disk_info.includes('|') ? '<span class="text-xs text-gray-400">(+more)</span>' : ''}
+                        </div>
+                        <div class="${d.last_update === 'Check Failed' ? 'text-red-500' : 'text-green-600'}">
+                            <i class="fab fa-windows w-4"></i> Update: ${d.last_update || 'Unknown'}
+                        </div>
+                        <div class="text-gray-400">IP: ${d.ip || d.public_ip || '-'}</div>
+                    </div>
+                `;
 
                 const row = `
                     <tr class="hover:bg-gray-50 border-b border-gray-100">
-                        <td class="px-6 py-4">${statusBadge}</td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 align-top">${statusBadge}</td>
+                        <td class="px-6 py-4 align-top">
                             <div class="font-bold text-gray-800 text-sm">${d.friendlyName || d.hostname}</div>
                             <div class="text-xs text-gray-400 font-mono">${d.hostname}</div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 align-top">
                             <div class="text-sm font-semibold text-indigo-700">${d.group || '-'}</div>
                             <div class="text-xs text-gray-500">${d.location || d.location_city || ''}</div>
                             ${mapLink}
                         </td>
-                        <td class="px-6 py-4 text-xs text-gray-600">
-                            <div>IP: ${d.ip || d.public_ip || '-'}</div>
-                            <div>CPU: ${d.cpu || '0%'} | RAM: ${d.ram || '0%'}</div>
+                        <td class="px-6 py-4 align-top">
+                            ${sysInfo}
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 align-top">
                             <div class="flex justify-center space-x-1">
                                 <button onclick="openEdit('${d.hostname}', '${d.friendlyName||''}', '${d.group||''}', '${d.location||''}')" class="text-gray-500 hover:text-blue-600 p-2 rounded hover:bg-gray-100" title="Edit"><i class="fas fa-edit"></i></button>
                                 ${isOnline ? `

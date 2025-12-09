@@ -23,19 +23,24 @@ const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
     group: String,
-    location: String,     
+    location: String,
     ip: String,
-    public_ip: String,    // เพิ่ม: IP จริง
-    location_city: String,// เพิ่ม: เมือง
-    isp: String,          // เพิ่ม: ผู้ให้บริการเน็ต
-    lat: Number,          // เพิ่ม: ละติจูด
-    lon: Number,          // เพิ่ม: ลองจิจูด
+    public_ip: String,
+    location_city: String,
+    isp: String,
+    lat: Number,
+    lon: Number,
     os: String,
     cpu: String,
     ram: String,
+    
+    // ✅ เพิ่ม 2 field นี้ครับ
+    disk_info: String,       // เก็บข้อมูล HDD (เช่น "C: 20% Free, D: 50% Free")
+    last_update: String,     // เก็บวันที่อัปเดต Windows ล่าสุด
+    
     last_seen: { type: Date, default: Date.now },
-    pendingCommand: String, // คำสั่งที่รอส่ง
-    screenshot: String      // เก็บรูปภาพ Base64
+    pendingCommand: String,
+    screenshot: String
 });
 
 const Device = mongoose.model('Device', deviceSchema);
