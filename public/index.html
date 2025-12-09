@@ -59,8 +59,7 @@
                                     <th class="px-6 py-3">Status</th>
                                     <th class="px-6 py-3">Device Name</th>
                                     <th class="px-6 py-3">Group / Location</th>
-                                    <th class="px-6 py-3">System Info (HDD/Update)</th>
-                                    <th class="px-6 py-3 text-center">Actions</th>
+                                    <th class="px-6 py-3">System Info (CPU/RAM/HDD)</th> <th class="px-6 py-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="deviceTable" class="bg-white divide-y divide-gray-100"></tbody>
@@ -118,7 +117,7 @@
     </div>
 
     <script>
-        // ⚠️⚠️ อย่าลืมแก้ URL ตรงนี้นะครับ ⚠️⚠️
+        // ⚠️⚠️ แก้ URL ตรงนี้เหมือนเดิมครับ ⚠️⚠️
         const API_URL = "https://it-monitor-server.onrender.com/api"; 
 
         let globalDevices = [];
@@ -153,7 +152,7 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- RENDER TABLE (แก้ไขให้โชว์ปุ่มและข้อมูลครบถ้วน) ---
+        // --- RENDER TABLE ---
         function renderTable() {
             const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
             let displayDevices = globalDevices;
@@ -168,9 +167,14 @@
                 const statusBadge = isOnline ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
                 const mapLink = (d.lat && d.lon) ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 block"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
 
+                // ✅ ดึง CPU และ RAM กลับมาแล้วครับ!
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
-                        <div><i class="fas fa-microchip w-3"></i> CPU: ${d.cpu || '0%'} | RAM: ${d.ram || '0%'}</div>
+                        <div>
+                            <span class="font-bold text-gray-600"><i class="fas fa-microchip w-3"></i> CPU:</span> ${d.cpu || '0%'} 
+                            <span class="mx-1 text-gray-300">|</span> 
+                            <span class="font-bold text-gray-600">RAM:</span> ${d.ram || '0%'}
+                        </div>
                         <div class="text-blue-600 truncate max-w-[200px]" title="${d.disk_info || ''}">
                             <i class="fas fa-hdd w-3"></i> ${d.disk_info ? d.disk_info.split('|')[0] : '-'}
                         </div>
@@ -187,15 +191,15 @@
                     ${mapLink}
                 `;
 
-                // ✅ ปุ่ม Actions เรียงกันครบ (ถ้า Offline ปุ่ม Restart/Shutdown จะซ่อนตัวเพื่อความปลอดภัย)
+                // ✅ ปุ่ม Actions อยู่ครบ (Restart/Shutdown จะโผล่เฉพาะตอน Online)
                 const actionButtons = `
                     <div class="flex justify-center space-x-1">
-                        <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="Details"><i class="fas fa-info-circle"></i></button>
+                        <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="Specs Details"><i class="fas fa-info-circle"></i></button>
                         <button onclick="openEdit('${d.hostname}', '${d.friendlyName||''}', '${d.group||''}', '${d.location||''}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200" title="Edit"><i class="fas fa-edit"></i></button>
                         ${isOnline ? `
                             <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100" title="Restart"><i class="fas fa-sync"></i></button>
                             <button onclick="sendCommand('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded hover:bg-red-100" title="Shutdown"><i class="fas fa-power-off"></i></button>
-                            <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100" title="Screen"><i class="fas fa-eye"></i></button>
+                            <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100" title="Remote Screen"><i class="fas fa-eye"></i></button>
                         ` : ''}
                         <button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100" title="Delete"><i class="fas fa-trash"></i></button>
                     </div>
@@ -216,6 +220,7 @@
             });
         }
 
+        // (ส่วนอื่นๆ เหมือนเดิมครับ)
         function renderSidebarGroups() {
             const groupListDiv = document.getElementById('groupList');
             const groups = [...new Set(globalDevices.map(d => d.group || 'Unassigned'))].sort();
