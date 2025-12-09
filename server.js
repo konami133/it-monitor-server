@@ -119,7 +119,7 @@ app.get('/api/devices', authenticateJWT, async (req, res) => {
         const deviceList = devices.map(d => {
             const dev = d.toObject();
             const diff = (now - new Date(dev.last_seen)) / 1000;
-            dev.status = diff > 120 ? 'offline' : 'online';
+            dev.status = diff > 30 ? 'offline' : 'online';
             return dev;
         });
         res.json(deviceList);
