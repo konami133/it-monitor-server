@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Support Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div id="loginModal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Admin Login</h2>
+            <input type="text" id="username" placeholder="Username" class="w-full p-2 border mb-4 rounded">
+            <input type="password" id="password" placeholder="Password" class="w-full p-2 border mb-4 rounded">
+            <button onclick="login()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Login</button>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden min-h-screen">
+        <nav class="bg-slate-800 text-white p-4 shadow-md flex justify-between">
+            <h1 class="text-xl font-bold">IT Infrastructure Monitor</h1>
+            <button onclick="logout()" class="text-sm bg-red-500 px-3 py-1 rounded">Logout</button>
+        </nav>
+
+        <div class="container mx-auto p-6">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <table class="min-w-full leading-normal">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 text-left">Hostname</th>
+                            <th class="py-3 px-6 text-left">IP Address</th>
+                            <th class="py-3 px-6 text-center">Status</th>
+                            <th class="py-3 px-6 text-center">CPU/RAM</th>
+                            <th class="py-3 px-6 text-center">Win Update</th>
+                            <th class="py-3 px-6 text-center">Last Seen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deviceTable" class="text-gray-600 text-sm font-light">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+
+        async function login() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: user, password: pass })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('token', data.token);
+                showDashboard();
+            } else {
+                alert('Login Failed');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            location.reload();
+        }
+
+        async function fetchDevices() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const res = await fetch(`${API_URL}/devices`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.status === 401 || res.status === 403) logout();
+
+            const devices = await res.json();
+            const tbody = document.getElementById('deviceTable');
+            tbody.innerHTML = '';
+
+            devices.forEach(d => {
+                const statusColor = d.status === 'online' ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700';
+                const updateStatus = d.windows_update === 'Up to date' ? 'text-green-600' : 'text-orange-500 font-bold';
+                
+                const row = `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="py-3 px-6 text-left whitespace-nowrap font-medium">${d.hostname}</td>
+                        <td class="py-3 px-6 text-left">${d.ip}</td>
+                        <td class="py-3 px-6 text-center"><span class="${statusColor} py-1 px-3 rounded-full text-xs">${d.status.toUpperCase()}</span></td>
+                        <td class="py-3 px-6 text-center">CPU: ${d.cpu} | RAM: ${d.ram}</td>
+                        <td class="py-3 px-6 text-center ${updateStatus}">${d.windows_update}</td>
+                        <td class="py-3 px-6 text-center">${new Date(d.last_seen).toLocaleTimeString()}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function showDashboard() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            fetchDevices();
+            setInterval(fetchDevices, 5000); // Auto refresh every 5s
+        }
+
+        if (localStorage.getItem('token')) showDashboard();
+    </script>
+</body>
+</html>
