@@ -24,6 +24,12 @@ const deviceSchema = new mongoose.Schema({
     cpu: String,
     ram: String,
     windows_update: String,
+// เพิ่ม field ใหม่สำหรับ Auto Location
+    public_ip: String,
+    location_city: String, // เช่น "Bangkok, Thailand"
+    isp: String,           // เช่น "True Internet"
+    lat: Number,
+    lon: Number,
     last_seen: { type: Date, default: Date.now },
     pendingCommand: String // คำสั่งที่รอส่งให้เครื่องลูก (reboot, shutdown)
 });

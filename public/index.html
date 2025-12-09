@@ -169,6 +169,30 @@
                 
                 const groupDisplay = `<div class="text-sm text-gray-900">${d.group || '-'}</div><div class="text-xs text-gray-500">${d.location || '-'}</div>`;
 
+// สร้างลิงก์ Google Maps
+const mapLink = (d.lat && d.lon) 
+    ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:underline text-xs"><i class="fas fa-map-marker-alt"></i> View Map</a>`
+    : '';
+
+// จัดรูปแบบการแสดงผลใหม่ในช่อง Location
+// ถ้ามี Group ที่ตั้งเอง ให้โชว์ Group
+// ถ้ามี Auto Location ให้โชว์ City + ISP
+const locationDisplay = `
+    <div class="text-sm font-semibold text-gray-700">${d.group || 'No Group'}</div>
+    <div class="text-xs text-gray-500">${d.location_city || 'Unknown Loc'}</div>
+    <div class="text-xs text-gray-400">${d.isp || ''}</div>
+    <div class="mt-1">${mapLink}</div>
+`;
+
+const row = `
+    <tr class="hover:bg-gray-50 transition">
+        <td class="px-6 py-4 whitespace-no-wrap">
+            ${locationDisplay}
+        </td>
+
+        </tr>
+`;
+
                 const row = `
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-6 py-4 whitespace-no-wrap">${statusBadge}</td>
