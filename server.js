@@ -19,9 +19,10 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('✅ MongoDB Connected'))
     .catch(err => console.error(err));
 
-// server.js (แก้ตรง deviceSchema)
+// server.js (แก้ไข Schema)
 
 const deviceSchema = new mongoose.Schema({
+    // ... (fields เดิม)
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
     group: String,
@@ -33,22 +34,26 @@ const deviceSchema = new mongoose.Schema({
     lat: Number,
     lon: Number,
     os: String,
-    cpu: String,
-    ram: String,
+    
+    // ✅ 4 ตัวนี้ต้องครบครับ
+    cpu: String,        // เก็บ % Usage (เช่น "45%")
+    ram: String,        // เก็บ % Usage (เช่น "60%")
+    cpu_model: String,  // ✅ (ใหม่) เก็บชื่อรุ่น (เช่น "Intel Core i5")
+    ram_total: String,  // ✅ (ใหม่) เก็บขนาดรวม (เช่น "16 GB")
+    
     disk_info: String,
     last_update: String,
+    serial_number: String,
+    gpu: String,
+    storage_model: String,
     
-    // ✅ เพิ่ม 3 fields นี้สำหรับ Hardware Specs
-    serial_number: String,  // S/N เครื่อง (สำคัญมากสำหรับ Asset)
-    gpu: String,            // การ์ดจอ (เช่น NVIDIA RTX 3060)
-    storage_model: String,  // ชื่อรุ่น Harddisk (เช่น WDC WDS100...)
-
     last_seen: { type: Date, default: Date.now },
     pendingCommand: String,
-    screenshot: String
+    screenshot: String,
+    isAlerted: { type: Boolean, default: false }
 });
 
-// (ส่วนอื่นๆ เหมือนเดิม อย่าลืม Save และ Deploy ขึ้น Render นะครับ!)
+// ... (ส่วนอื่นเหมือนเดิม)
 
 const Device = mongoose.model('Device', deviceSchema);
 

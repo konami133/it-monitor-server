@@ -59,7 +59,8 @@
                                     <th class="px-6 py-3">Status</th>
                                     <th class="px-6 py-3">Device Name</th>
                                     <th class="px-6 py-3">Group / Location</th>
-                                    <th class="px-6 py-3">System Info (CPU/RAM/HDD)</th> <th class="px-6 py-3 text-center">Actions</th>
+                                    <th class="px-6 py-3">System Info (Usage %)</th>
+                                    <th class="px-6 py-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="deviceTable" class="bg-white divide-y divide-gray-100"></tbody>
@@ -86,7 +87,7 @@
                 </div>
                 <div class="space-y-4 bg-gray-50 p-6 rounded-lg border border-gray-200 text-sm">
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Processor</span><span class="col-span-2 font-medium text-gray-800" id="det-cpu">-</span></div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">RAM</span><span class="col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">RAM Total</span><span class="col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">GPU</span><span class="col-span-2 font-medium text-gray-800" id="det-gpu">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Storage Model</span><span class="col-span-2 font-medium text-gray-800" id="det-storage">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
@@ -117,7 +118,7 @@
     </div>
 
     <script>
-        // ⚠️⚠️ แก้ URL ตรงนี้เหมือนเดิมครับ ⚠️⚠️
+        // ⚠️⚠️ แก้ URL ตรงนี้ที่เดียวครับ ⚠️⚠️
         const API_URL = "https://it-monitor-server.onrender.com/api"; 
 
         let globalDevices = [];
@@ -167,7 +168,7 @@
                 const statusBadge = isOnline ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
                 const mapLink = (d.lat && d.lon) ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 block"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
 
-                // ✅ ดึง CPU และ RAM กลับมาแล้วครับ!
+                // ✅ ในตาราง: โชว์เป็น % (d.cpu, d.ram)
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
                         <div>
@@ -191,7 +192,7 @@
                     ${mapLink}
                 `;
 
-                // ✅ ปุ่ม Actions อยู่ครบ (Restart/Shutdown จะโผล่เฉพาะตอน Online)
+                // ✅ ปุ่ม Actions ครบ
                 const actionButtons = `
                     <div class="flex justify-center space-x-1">
                         <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="Specs Details"><i class="fas fa-info-circle"></i></button>
@@ -220,7 +221,6 @@
             });
         }
 
-        // (ส่วนอื่นๆ เหมือนเดิมครับ)
         function renderSidebarGroups() {
             const groupListDiv = document.getElementById('groupList');
             const groups = [...new Set(globalDevices.map(d => d.group || 'Unassigned'))].sort();
@@ -254,8 +254,11 @@
             const d = globalDevices.find(dev => dev.hostname === hostname); if(!d) return;
             document.getElementById('det-friendlyName').innerText = d.friendlyName || "Unknown Device";
             document.getElementById('det-hostname').innerText = d.hostname;
-            document.getElementById('det-cpu').innerText = d.cpu || "Unknown";
-            document.getElementById('det-ram').innerText = d.ram || "Unknown";
+            
+            // ✅ ในหน้า Details: โชว์ชื่อรุ่น (d.cpu_model, d.ram_total)
+            document.getElementById('det-cpu').innerText = d.cpu_model || d.cpu || "Unknown";
+            document.getElementById('det-ram').innerText = d.ram_total || d.ram || "Unknown";
+            
             document.getElementById('det-gpu').innerText = d.gpu || "Unknown";
             document.getElementById('det-storage').innerText = d.storage_model || "Unknown";
             document.getElementById('det-os').innerText = d.os || "Unknown";
