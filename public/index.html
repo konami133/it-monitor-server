@@ -11,172 +11,205 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 h-screen flex overflow-hidden">
-
-    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
-        <div class="h-16 flex items-center justify-center border-b border-slate-700">
-            <h1 class="text-xl font-bold tracking-wider"><i class="fas fa-network-wired mr-2"></i>IT MONITOR</h1>
-        </div>
-        <nav class="flex-1 px-2 py-4 space-y-2">
-            <a href="#" class="flex items-center px-4 py-3 bg-blue-600 rounded-md text-white">
-                <i class="fas fa-desktop w-6"></i> Dashboard
-            </a>
-            <a href="#" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-md transition">
-                <i class="fas fa-history w-6"></i> Logs (Coming Soon)
-            </a>
-        </nav>
-        <div class="p-4 border-t border-slate-700">
-            <button onclick="logout()" class="flex items-center text-red-400 hover:text-red-300">
-                <i class="fas fa-sign-out-alt w-6"></i> Logout
-            </button>
-        </div>
-    </aside>
-
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-10">
-            <h2 class="text-lg font-semibold text-gray-700">Dashboard Overview</h2>
-            <div class="flex items-center space-x-4">
-                <span class="text-sm text-gray-500">Admin User</span>
-                <div class="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">A</div>
-            </div>
-        </header>
-
-        <main class="flex-1 overflow-x-hidden overflow-y-auto p-6">
-            
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-blue-500">
-                    <div class="text-gray-400 text-sm">Total Devices</div>
-                    <div class="text-2xl font-bold text-gray-700" id="totalCount">0</div>
-                </div>
-                <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-green-500">
-                    <div class="text-gray-400 text-sm">Online</div>
-                    <div class="text-2xl font-bold text-green-600" id="onlineCount">0</div>
-                </div>
-                <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-red-500">
-                    <div class="text-gray-400 text-sm">Offline</div>
-                    <div class="text-2xl font-bold text-red-600" id="offlineCount">0</div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                    <h3 class="font-semibold text-gray-700">Managed Devices</h3>
-                    <button onclick="fetchDevices()" class="text-blue-500 hover:text-blue-700 text-sm"><i class="fas fa-sync-alt"></i> Refresh</button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full whitespace-no-wrap">
-                        <thead>
-                            <tr class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                <th class="px-6 py-3">Status</th>
-                                <th class="px-6 py-3">Device Name</th>
-                                <th class="px-6 py-3">Group / Location</th>
-                                <th class="px-6 py-3">System Info</th>
-                                <th class="px-6 py-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="deviceTable" class="bg-white divide-y divide-gray-100">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    </div>
+<body class="bg-gray-100 h-screen flex overflow-hidden">
 
     <div id="loginModal" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-2xl w-96 text-center">
             <div class="mb-4 text-blue-600 text-4xl"><i class="fas fa-shield-alt"></i></div>
-            <h2 class="text-2xl font-bold mb-6 text-gray-800">Admin Access</h2>
+            <h2 class="text-2xl font-bold mb-6 text-gray-800">IT Admin Login</h2>
+            
             <input type="text" id="username" placeholder="Username" class="w-full p-3 border bg-gray-50 mb-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             <input type="password" id="password" placeholder="Password" class="w-full p-3 border bg-gray-50 mb-6 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-semibold hover:bg-blue-700 transition">LOGIN</button>
+            
+            <button type="button" onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-semibold hover:bg-blue-700 transition cursor-pointer">
+                LOGIN SYSTEM
+            </button>
+            <p id="loginStatus" class="mt-4 text-red-500 text-sm min-h-[20px]"></p>
         </div>
     </div>
 
-    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg w-96">
-            <h3 class="text-xl font-bold mb-4">Edit Device</h3>
+    <div id="dashboardContent" class="hidden w-full h-full flex">
+        
+        <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
+            <div class="h-16 flex items-center justify-center border-b border-slate-700 bg-slate-800">
+                <h1 class="text-xl font-bold tracking-wider"><i class="fas fa-network-wired mr-2"></i>IT MONITOR</h1>
+            </div>
+            <nav class="flex-1 px-2 py-4 space-y-2">
+                <a href="#" class="flex items-center px-4 py-3 bg-blue-600 rounded-md text-white shadow">
+                    <i class="fas fa-desktop w-6"></i> Dashboard
+                </a>
+                <a href="#" class="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-md transition">
+                    <i class="fas fa-history w-6"></i> Logs History
+                </a>
+            </nav>
+            <div class="p-4 border-t border-slate-700">
+                <button onclick="logout()" class="flex items-center text-red-400 hover:text-red-300 w-full">
+                    <i class="fas fa-sign-out-alt w-6"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-10">
+                <h2 class="text-lg font-semibold text-gray-700">System Overview</h2>
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-gray-500">Admin Status: Active</span>
+                    <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">ON</div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto p-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <div class="text-gray-400 text-xs uppercase font-bold">Total Devices</div>
+                        <div class="text-2xl font-bold text-gray-700" id="totalCount">0</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-green-500">
+                        <div class="text-gray-400 text-xs uppercase font-bold">Online</div>
+                        <div class="text-2xl font-bold text-green-600" id="onlineCount">0</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border-l-4 border-red-500">
+                        <div class="text-gray-400 text-xs uppercase font-bold">Offline</div>
+                        <div class="text-2xl font-bold text-red-600" id="offlineCount">0</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h3 class="font-semibold text-gray-700">Managed Computers</h3>
+                        <button onclick="fetchDevices()" class="text-blue-500 hover:text-blue-700 text-sm font-medium"><i class="fas fa-sync-alt animate-spin-hover"></i> Refresh Data</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full whitespace-no-wrap">
+                            <thead>
+                                <tr class="bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                    <th class="px-6 py-3">Status</th>
+                                    <th class="px-6 py-3">Device Name</th>
+                                    <th class="px-6 py-3">Group / Location</th>
+                                    <th class="px-6 py-3">System Info</th>
+                                    <th class="px-6 py-3 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deviceTable" class="bg-white divide-y divide-gray-100">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-96 shadow-xl">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Edit Device Info</h3>
             <input type="hidden" id="editHostname">
             <div class="mb-3">
-                <label class="text-xs text-gray-500">Friendly Name</label>
-                <input type="text" id="editName" class="w-full border p-2 rounded">
+                <label class="text-xs text-gray-500 font-bold">Friendly Name (ชื่อเรียก)</label>
+                <input type="text" id="editName" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div class="mb-3">
-                <label class="text-xs text-gray-500">Group (Dept)</label>
-                <input type="text" id="editGroup" class="w-full border p-2 rounded">
+                <label class="text-xs text-gray-500 font-bold">Group (แผนก)</label>
+                <input type="text" id="editGroup" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div class="mb-4">
-                <label class="text-xs text-gray-500">Location</label>
-                <input type="text" id="editLocation" class="w-full border p-2 rounded">
+                <label class="text-xs text-gray-500 font-bold">Location (ชั้น/ห้อง)</label>
+                <input type="text" id="editLocation" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div class="flex justify-end space-x-2">
-                <button onclick="closeEditModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">Cancel</button>
-                <button onclick="saveDevice()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+                <button onclick="closeEditModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded transition">Cancel</button>
+                <button onclick="saveDevice()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition shadow">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screenModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+        <div class="bg-white p-2 rounded-lg max-w-5xl w-full relative mx-4">
+            <button onclick="closeScreenModal()" class="absolute -top-10 right-0 text-white text-xl hover:text-gray-300"><i class="fas fa-times"></i> Close</button>
+            <div class="flex justify-between items-center mb-2 px-2">
+                <h3 class="font-bold text-gray-700">Remote View</h3>
+                <button onclick="refreshScreen()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"><i class="fas fa-camera"></i> Capture New</button>
+            </div>
+            <div id="screenContainer" class="flex justify-center items-center min-h-[400px] bg-gray-200 rounded overflow-hidden">
+                <span class="text-gray-500 animate-pulse">Waiting for image...</span>
             </div>
         </div>
     </div>
 
     <script>
-        // ⚠️ แก้ตรงนี้สำคัญมาก!
-// ถ้าคุณเปิดไฟล์ index.html ในเครื่องตัวเอง (Local) ให้ใส่ Link เต็มของ Render
-// แต่ถ้าเอาไฟล์ขึ้น Render แล้ว ให้ใช้แค่ '/api' ได้
-const API_URL = "https://it-monitor-server.onrender.com/api"; 
-// (อย่าลืมเติม /api ต่อท้าย และอย่ามี / ปิดท้ายอีก)
+        // ⚠️⚠️ แก้ตรงนี้! ใส่ลิงก์ Render ของคุณ (อย่าลืม /api) ⚠️⚠️
+        const API_URL = "https://it-monitor-server.onrender.com/api"; 
 
-        // --- AUTH ---
+        let currentViewingHost = null;
+
+        // --- LOGIN SYSTEM ---
         async function login() {
-    const u = document.getElementById('username').value;
-    const p = document.getElementById('password').value;
-    
-    // เพิ่มการแจ้งเตือนถ้าลืมกรอก
-    if(!u || !p) { alert("Please enter username and password"); return; }
+            const statusMsg = document.getElementById('loginStatus');
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
 
-    console.log("Attempting to login to:", `${API_URL}/login`); // Log ดู URL
+            statusMsg.innerText = "Connecting...";
 
-    try {
-        const res = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username: u, password: p })
-        });
+            if(!API_URL.includes("http")) {
+                alert("❌ อย่าลืมแก้ API_URL ในโค้ดบรรทัดที่ 140 ครับ!");
+                return;
+            }
 
-        if(res.ok){
-            const data = await res.json();
-            console.log("Login Success:", data);
-            localStorage.setItem('token', data.token);
-            
-            // ซ่อน Modal และโหลดข้อมูล
-            document.getElementById('loginModal').classList.add('hidden');
-            alert("Login Successful! 🎉"); // แจ้งเตือนหน่อย
-            fetchDevices();
-            setInterval(fetchDevices, 5000);
-        } else {
-            // กรณี Server ตอบกลับมาว่าผิด (เช่น 401)
-            const errorText = await res.text();
-            console.error("Server Error:", errorText);
-            alert(`Login Failed: Username or Password incorrect`);
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if(res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('token', data.token);
+                    document.getElementById('loginModal').classList.add('hidden');
+                    document.getElementById('dashboardContent').classList.remove('hidden');
+                    fetchDevices();
+                    setInterval(fetchDevices, 5000); 
+                } else {
+                    statusMsg.innerText = "❌ Username หรือ Password ผิด";
+                }
+            } catch (error) {
+                console.error(error);
+                statusMsg.innerText = "❌ เชื่อมต่อ Server ไม่ได้";
+                alert(`Error: ${error.message}`);
+            }
         }
-    } catch (error) {
-        // กรณี Network Error หรือ URL ผิด (เช่น เน็ตหลุด, Server ดับ)
-        console.error("Network Error:", error);
-        alert(`Cannot connect to Server!\nCheck F12 Console for details.\nError: ${error.message}`);
-    }
-}
 
-        function logout() { localStorage.removeItem('token'); location.reload(); }
+        function logout() {
+            localStorage.removeItem('token');
+            location.reload();
+        }
 
-        // --- MAIN DATA ---
+        // --- DASHBOARD DATA ---
         async function fetchDevices() {
             const token = localStorage.getItem('token');
             if(!token) return;
 
             try {
-                const res = await fetch(`${API_URL}/devices`, { headers: { 'Authorization': `Bearer ${token}` }});
-                if(res.status === 401) return logout();
+                const res = await fetch(`${API_URL}/devices`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if(res.status === 401) { logout(); return; }
                 
                 const devices = await res.json();
                 renderTable(devices);
                 updateStats(devices);
-            } catch(e) { console.error(e); }
+
+                // ถ้ากำลังดูรูปอยู่ ให้เช็คว่ามีรูปใหม่มาหรือยัง
+                if(currentViewingHost) {
+                    const target = devices.find(d => d.hostname === currentViewingHost);
+                    if(target && target.screenshot) {
+                         document.getElementById('screenContainer').innerHTML = 
+                            `<img src="data:image/jpeg;base64,${target.screenshot}" class="max-w-full h-auto shadow-lg">`;
+                    }
+                }
+
+            } catch (e) { console.error(e); }
         }
 
         function renderTable(devices) {
@@ -188,54 +221,65 @@ const API_URL = "https://it-monitor-server.onrender.com/api";
 
             devices.forEach(d => {
                 const isOnline = d.status === 'online';
-                const statusBadge = isOnline 
-                    ? `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"><i class="fas fa-check-circle mr-1"></i> Online</span>`
-                    : `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800"><i class="fas fa-times-circle mr-1"></i> Offline</span>`;
-
-                const nameDisplay = d.friendlyName ? `<div class="font-bold text-gray-800">${d.friendlyName}</div><div class="text-xs text-gray-500">${d.hostname}</div>` : `<div class="font-bold text-gray-800">${d.hostname}</div>`;
                 
-                const groupDisplay = `<div class="text-sm text-gray-900">${d.group || '-'}</div><div class="text-xs text-gray-500">${d.location || '-'}</div>`;
+                // Status Badge
+                const statusBadge = isOnline 
+                    ? `<span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800 border border-green-200"><i class="fas fa-check-circle mr-1 mt-0.5"></i> ONLINE</span>`
+                    : `<span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800 border border-red-200"><i class="fas fa-times-circle mr-1 mt-0.5"></i> OFFLINE</span>`;
 
-// สร้างลิงก์ Google Maps
+                // Name & Hostname
+                const nameDisplay = d.friendlyName 
+                    ? `<div class="font-bold text-gray-800 text-sm">${d.friendlyName}</div><div class="text-xs text-gray-400 font-mono">${d.hostname}</div>` 
+                    : `<div class="font-bold text-gray-800 text-sm">${d.hostname}</div>`;
+                
+                // Map Link Logic
+                // แก้ตรงบรรทัด mapLink ใน function renderTable ครับ
 const mapLink = (d.lat && d.lon) 
-    ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:underline text-xs"><i class="fas fa-map-marker-alt"></i> View Map</a>`
+    ? `<a href="https://www.google.com/maps?q=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 inline-block"><i class="fas fa-map-marker-alt"></i> View Map</a>`
     : '';
 
-// จัดรูปแบบการแสดงผลใหม่ในช่อง Location
-// ถ้ามี Group ที่ตั้งเอง ให้โชว์ Group
-// ถ้ามี Auto Location ให้โชว์ City + ISP
-const locationDisplay = `
-    <div class="text-sm font-semibold text-gray-700">${d.group || 'No Group'}</div>
-    <div class="text-xs text-gray-500">${d.location_city || 'Unknown Loc'}</div>
-    <div class="text-xs text-gray-400">${d.isp || ''}</div>
-    <div class="mt-1">${mapLink}</div>
-`;
+                // Location Display
+                const locationDisplay = `
+                    <div class="text-sm font-semibold text-indigo-700">${d.group || '-'}</div>
+                    <div class="text-xs text-gray-500">${d.location || d.location_city || ''}</div>
+                    <div class="text-xs text-gray-400">${d.isp || ''}</div>
+                    ${mapLink}
+                `;
 
-const row = `
-    <tr class="hover:bg-gray-50 transition">
-        <td class="px-6 py-4 whitespace-no-wrap">
-            ${locationDisplay}
-        </td>
+                // System Info
+                const sysInfo = `
+                    <div class="text-xs text-gray-600"><span class="font-bold">IP:</span> ${d.ip || d.public_ip || '-'}</div>
+                    <div class="text-xs text-gray-600"><span class="font-bold">OS:</span> ${d.os || '-'}</div>
+                    <div class="text-xs text-gray-500 mt-1">CPU: ${d.cpu || '0%'} | RAM: ${d.ram || '0%'}</div>
+                `;
 
-        </tr>
-`;
+                // Action Buttons
+                const actions = `
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="openEdit('${d.hostname}', '${d.friendlyName||''}', '${d.group||''}', '${d.location||''}')" class="text-gray-500 hover:text-blue-600 p-1 bg-gray-100 rounded hover:bg-blue-50 transition" title="Edit Info">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        ${isOnline ? `
+                        <button onclick="sendCommand('${d.hostname}', 'reboot')" class="text-orange-500 hover:text-orange-700 p-1 bg-orange-50 rounded hover:bg-orange-100 transition" title="Restart">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                        <button onclick="sendCommand('${d.hostname}', 'shutdown')" class="text-red-500 hover:text-red-700 p-1 bg-red-50 rounded hover:bg-red-100 transition" title="Shutdown">
+                            <i class="fas fa-power-off"></i>
+                        </button>
+                        <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 hover:text-purple-700 p-1 bg-purple-50 rounded hover:bg-purple-100 transition" title="View Screen">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                `;
 
                 const row = `
-                    <tr class="hover:bg-gray-50 transition">
+                    <tr class="hover:bg-gray-50 transition border-b border-gray-100">
                         <td class="px-6 py-4 whitespace-no-wrap">${statusBadge}</td>
                         <td class="px-6 py-4 whitespace-no-wrap">${nameDisplay}</td>
-                        <td class="px-6 py-4 whitespace-no-wrap">${groupDisplay}</td>
-                        <td class="px-6 py-4 whitespace-no-wrap text-sm text-gray-500">
-                            <div>CPU: ${d.cpu} | RAM: ${d.ram}</div>
-                            <div class="text-xs">${d.ip}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-no-wrap text-sm font-medium">
-                            <button onclick="openEdit('${d.hostname}', '${d.friendlyName||''}', '${d.group||''}', '${d.location||''}')" class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit Info"><i class="fas fa-edit"></i></button>
-                            ${isOnline ? `
-                            <button onclick="sendCommand('${d.hostname}', 'reboot')" class="text-orange-500 hover:text-orange-700 mr-2" title="Restart"><i class="fas fa-sync"></i></button>
-                            <button onclick="sendCommand('${d.hostname}', 'shutdown')" class="text-red-500 hover:text-red-700" title="Shutdown"><i class="fas fa-power-off"></i></button>
-                            ` : ''}
-                        </td>
+                        <td class="px-6 py-4 whitespace-no-wrap">${locationDisplay}</td>
+                        <td class="px-6 py-4 whitespace-no-wrap">${sysInfo}</td>
+                        <td class="px-6 py-4 whitespace-no-wrap">${actions}</td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
@@ -248,7 +292,7 @@ const row = `
             document.getElementById('offlineCount').innerText = devices.filter(d => d.status !== 'online').length;
         }
 
-        // --- ACTIONS ---
+        // --- ACTIONS (Edit, Command, Screen) ---
         function openEdit(hostname, name, group, loc) {
             document.getElementById('editHostname').value = hostname;
             document.getElementById('editName').value = name;
@@ -276,17 +320,43 @@ const row = `
         }
 
         async function sendCommand(hostname, cmd) {
-            if(!confirm(`Are you sure you want to ${cmd.toUpperCase()} ${hostname}?`)) return;
+            if(!confirm(`⚠️ Are you sure you want to ${cmd.toUpperCase()} ${hostname}?`)) return;
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/devices/command`, {
                 method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
                 body: JSON.stringify({ hostname, command: cmd })
             });
-            if(res.ok) alert(`Command ${cmd} sent! It will execute in a few seconds.`);
+            if(res.ok) alert(`Command sent!`);
         }
 
+        async function requestScreenshot(hostname) {
+            currentViewingHost = hostname;
+            document.getElementById('screenModal').classList.remove('hidden');
+            document.getElementById('screenContainer').innerHTML = '<span class="text-gray-500 animate-pulse">Requesting snapshot...</span>';
+            await sendCommand(hostname, 'screenshot');
+        }
+
+        function closeScreenModal() {
+            document.getElementById('screenModal').classList.add('hidden');
+            currentViewingHost = null;
+        }
+
+        function refreshScreen() {
+            if(currentViewingHost) requestScreenshot(currentViewingHost);
+        }
+
+        // --- KEYPRESS EVENTS ---
+        document.getElementById('password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') login();
+        });
+        document.getElementById('username').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') document.getElementById('password').focus();
+        });
+
+        // --- AUTO START ---
         if(localStorage.getItem('token')) {
             document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
             fetchDevices();
             setInterval(fetchDevices, 5000);
         }
