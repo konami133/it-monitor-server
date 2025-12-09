@@ -1,38 +1,39 @@
-// server.js (ฉบับอัปเกรด MongoDB)
-require('dotenv').config(); // โหลดค่าจาก .env
+// server.js (Pro Version)
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const mongoose = require('mongoose'); // พระเอกของเรา
+const mongoose = require('mongoose');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// --- 1. เชื่อมต่อ MongoDB ---
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('✅ Connected to MongoDB Atlas'))
-    .catch(err => console.error('❌ MongoDB Connection Error:', err));
+    .then(() => console.log('✅ MongoDB Connected'))
+    .catch(err => console.error(err));
 
-// --- 2. สร้าง Schema (โครงสร้างข้อมูลที่จะเก็บ) ---
+// 1. อัปเกรด Schema เพิ่มฟิลด์ใหม่
 const deviceSchema = new mongoose.Schema({
-    hostname: { type: String, required: true, unique: true }, // ชื่อเครื่องห้ามซ้ำ
+    hostname: { type: String, required: true, unique: true },
+    friendlyName: String, // ชื่อเรียกง่ายๆ เช่น "เครื่องบัญชี 1"
+    group: String,        // แผนก เช่น "HR", "IT"
+    location: String,     // ตำแหน่ง เช่น "ชั้น 2 โซน A"
     ip: String,
     os: String,
     cpu: String,
     ram: String,
     windows_update: String,
-    last_seen: { type: Date, default: Date.now }
+    last_seen: { type: Date, default: Date.now },
+    pendingCommand: String // คำสั่งที่รอส่งให้เครื่องลูก (reboot, shutdown)
 });
 
-// สร้าง Model
 const Device = mongoose.model('Device', deviceSchema);
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- Middleware Login (เหมือนเดิม) ---
 const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -47,61 +48,69 @@ const authenticateJWT = (req, res, next) => {
     }
 };
 
-// --- API Login (เหมือนเดิม) ---
-// ใน Production ควรเก็บ User ใน DB เช่นกัน แต่เพื่อความง่ายขอ Hardcode ไว้ก่อน
-const users = { "admin": "password123" }; 
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    if (users[username] === password) {
-        const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: '1h' });
+    // Hardcode user ไว้ก่อน (ของจริงควรเก็บใน DB)
+    if (username === "admin" && password === "password123") {
+        const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: '2h' });
         res.json({ token });
     } else {
-        res.status(401).send('Invalid Credentials');
+        res.status(401).send('Login Failed');
     }
 });
 
-// --- API: รับข้อมูลจาก Agent (อัปเกรดใหม่) ---
+// 2. Agent Report (อัปเกรดให้ส่งคำสั่งกลับไปหา Agent)
 app.post('/api/report', async (req, res) => {
     const data = req.body;
-    
     try {
-        // ค้นหาเครื่องเดิมจาก Hostname ถ้าเจอให้ Update ถ้าไม่เจอให้ Create ใหม่ (Upsert)
-        await Device.findOneAndUpdate(
-            { hostname: data.hostname }, // เงื่อนไขการหา
-            { ...data, last_seen: new Date() }, // ข้อมูลที่จะอัปเดต
-            { upsert: true, new: true } // Option: ถ้าไม่มีให้สร้างใหม่
+        // หาเครื่องและอัปเดตสถานะ
+        const device = await Device.findOneAndUpdate(
+            { hostname: data.hostname },
+            { ...data, last_seen: new Date() },
+            { upsert: true, new: true }
         );
-        
-        console.log(`Updated status for: ${data.hostname}`);
-        res.send('Data saved to MongoDB');
+
+        // เช็คว่ามีคำสั่งค้างอยู่ไหม?
+        let responsePayload = { message: 'received' };
+        if (device.pendingCommand) {
+            console.log(`Sending command '${device.pendingCommand}' to ${device.hostname}`);
+            responsePayload.command = device.pendingCommand;
+            
+            // ส่งคำสั่งแล้ว ให้ลบคำสั่งทิ้งทันที
+            await Device.updateOne({ hostname: data.hostname }, { $unset: { pendingCommand: "" } });
+        }
+
+        res.json(responsePayload);
     } catch (error) {
         console.error(error);
-        res.status(500).send('Database Error');
+        res.status(500).send('Error');
     }
 });
 
-// --- API: ดึงข้อมูล (อัปเกรดใหม่) ---
 app.get('/api/devices', authenticateJWT, async (req, res) => {
-    try {
-        const devices = await Device.find(); // ดึงข้อมูลทั้งหมดจาก DB
-        const now = new Date();
-
-        // แปลงข้อมูลเพื่อคำนวณสถานะ Online/Offline
-        const deviceList = devices.map(d => {
-            // แปลง Mongoose Document เป็น Object ธรรมดา
-            const device = d.toObject(); 
-            
-            const diff = (now - new Date(device.last_seen)) / 1000;
-            device.status = diff > 120 ? 'offline' : 'online'; // 120 วินาที
-            return device;
-        });
-
-        res.json(deviceList);
-    } catch (error) {
-        res.status(500).send('Error fetching devices');
-    }
+    const devices = await Device.find();
+    const now = new Date();
+    const deviceList = devices.map(d => {
+        const dev = d.toObject();
+        const diff = (now - new Date(dev.last_seen)) / 1000;
+        dev.status = diff > 120 ? 'offline' : 'online';
+        return dev;
+    });
+    res.json(deviceList);
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+// 3. API สำหรับแก้ไขชื่อ/กลุ่ม (Edit Device)
+app.post('/api/devices/update', authenticateJWT, async (req, res) => {
+    const { hostname, friendlyName, group, location } = req.body;
+    await Device.updateOne({ hostname }, { friendlyName, group, location });
+    res.json({ success: true });
 });
+
+// 4. API สำหรับสั่ง Remote (Queue Command)
+app.post('/api/devices/command', authenticateJWT, async (req, res) => {
+    const { hostname, command } = req.body; // command: 'reboot' or 'shutdown'
+    await Device.updateOne({ hostname }, { pendingCommand: command });
+    res.json({ success: true, message: `Command ${command} queued for ${hostname}` });
+});
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
