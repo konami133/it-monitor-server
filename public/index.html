@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IT Enterprise Monitor (Pro UI)</title>
+    <title>IT Enterprise Monitor (Final Fix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        /* ใช้ dvh เพื่อแก้ปัญหา Address Bar บังปุ่มบนมือถือ */
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; height: 100dvh; }
         .group-active { background-color: #2563eb; color: white; }
         .card-active { border-color: #2563eb; background-color: #eff6ff; }
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex overflow-hidden">
+<body class="bg-gray-100 flex overflow-hidden">
 
     <div id="loginModal" class="fixed inset-0 bg-slate-900 z-[60] flex items-center justify-center p-4">
         <div class="bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
@@ -60,7 +61,7 @@
             <header class="h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 z-10 flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <button onclick="toggleSidebar()" class="md:hidden text-gray-600 text-xl p-2"><i class="fas fa-bars"></i></button>
-                    <h2 class="text-lg font-semibold text-gray-700 truncate max-w-[150px] md:max-w-none" id="headerTitle">Dashboard</h2>
+                    <h2 class="text-lg font-semibold text-gray-700 truncate max-w-[120px] md:max-w-none" id="headerTitle">Dashboard</h2>
                 </div>
                 
                 <div class="flex items-center gap-2 md:gap-4">
@@ -69,7 +70,12 @@
                         <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
                     </div>
                     <button onclick="document.getElementById('searchInputMobile').classList.toggle('hidden')" class="sm:hidden text-gray-500 p-2"><i class="fas fa-search"></i></button>
+                    
                     <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow flex-shrink-0">ON</div>
+                    
+                    <button onclick="logout()" class="md:hidden text-red-500 p-2 border border-red-200 rounded ml-1 bg-red-50" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
             </header>
             
@@ -111,7 +117,7 @@
                                 <tr class="bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     <th class="px-4 py-3 md:px-6">Status / Type</th>
                                     <th class="px-4 py-3 md:px-6">Device Name</th>
-                                    <th class="px-4 py-3 md:px-6">Info</th>
+                                    <th class="px-4 py-3 md:px-6 hidden sm:table-cell">Location</th>
                                     <th class="px-4 py-3 md:px-6">Hardware Status</th>
                                     <th class="px-4 py-3 md:px-6 text-center">Actions</th>
                                 </tr>
@@ -205,7 +211,7 @@
                 <label class="text-xs font-bold block mb-2 text-gray-500">Permissions</label>
                 <div class="space-y-3">
                     <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="edit_device"> <span class="text-sm">Edit Info</span></label>
-                    <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="control_device"> <span class="text-sm">Control (Reboot)</span></label>
+                    <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="control_device"> <span class="text-sm">Control (Reboot/Shutdown)</span></label>
                     <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="delete_device"> <span class="text-sm">Delete Device</span></label>
                 </div>
             </div>
@@ -393,7 +399,6 @@
                     hddText = "⚠️ " + hddText;
                 }
 
-                // ✅ UPDATED SYSINFO (PRO LOOK with ICONS & RAM)
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
                         <div class="mb-1 flex items-center" title="Network Info">
@@ -423,15 +428,28 @@
                     <div class="text-xs text-gray-500 font-bold truncate">${d.location || ''}</div>
                 `;
 
-                let buttons = `<div class="flex justify-center gap-1"><button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100"><i class="fas fa-info-circle"></i></button>`;
-                if(hasPerm('edit_device')) buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200"><i class="fas fa-edit"></i></button>`;
+                // ✅ ปุ่ม Actions (แก้ใหม่ให้โชว์บนมือถือด้วย)
+                let buttons = `<div class="flex justify-center gap-1 flex-wrap">
+                    <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="Details"><i class="fas fa-info-circle"></i></button>`;
+                
+                if(hasPerm('edit_device')) {
+                    buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200" title="Edit"><i class="fas fa-edit"></i></button>`;
+                }
+
                 if(hasPerm('control_device') && isOnline) {
+                    // ✅ เอา hidden sm:block ออก เพื่อให้ปุ่มโชว์บนมือถือ
                     buttons += `
-                        <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100 hidden sm:block"><i class="fas fa-sync"></i></button>
-                        <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100"><i class="fas fa-eye"></i></button>
+                        <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100" title="Reboot"><i class="fas fa-sync"></i></button>
+                        <button onclick="sendCommand('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded hover:bg-red-100" title="Shutdown"><i class="fas fa-power-off"></i></button>
+                        <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100" title="Screen"><i class="fas fa-eye"></i></button>
                     `;
                 }
-                if(hasPerm('delete_device')) buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100 hidden md:block"><i class="fas fa-trash"></i></button>`;
+
+                if(hasPerm('delete_device')) {
+                    // ✅ ปุ่มลบก็ให้โชว์บนมือถือด้วย
+                    buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100" title="Delete"><i class="fas fa-trash"></i></button>`;
+                }
+                
                 buttons += `</div>`;
 
                 const row = `
