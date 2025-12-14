@@ -4,25 +4,30 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // ✅ เพิ่มตัวเข้ารหัส
+const bcrypt = require('bcryptjs');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000; // Render มักจะใช้ Port 10000 หรือ Environment Variable
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 app.use(express.static('public'));
 
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => {
-        console.log('✅ MongoDB Connected');
-        initAdmin(); // สร้าง Admin อัตโนมัติเมื่อเริ่มระบบ
-    })
-    .catch(err => console.error('❌ DB Error:', err));
+// ==========================================
+// 1️⃣ กำหนด SCHEMAS & MODELS (ไว้บนสุด!)
+// ==========================================
 
-// ... (ส่วน import) ...
+// User Schema
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, default: 'staff' },
+    permissions: [String] 
+});
+const User = mongoose.model('User', userSchema);
 
+// Device Schema
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
@@ -31,9 +36,7 @@ const deviceSchema = new mongoose.Schema({
     ip: String,
     public_ip: String,
     mac_address: String,
-    
-    connection_type: String, // ✅ เพิ่มบรรทัดนี้ครับ (internet / local)
-
+    connection_type: String, // internet / local
     location_city: String,
     isp: String,
     lat: Number,
@@ -55,26 +58,46 @@ const deviceSchema = new mongoose.Schema({
     screenshot: String,
     isAlerted: { type: Boolean, default: false }
 });
-
-// ... (ส่วนที่เหลือเหมือนเดิม) ...
 const Device = mongoose.model('Device', deviceSchema);
 
-// --- INITIALIZATION ---
+// ==========================================
+// 2️⃣ ฟังก์ชันสร้าง ADMIN (ต้องอยู่หลัง Model)
+// ==========================================
 async function initAdmin() {
-    const count = await User.countDocuments();
-    if (count === 0) {
-        const hashedPassword = await bcrypt.hash("password123", 10);
-        await User.create({
-            username: "admin",
-            password: hashedPassword,
-            role: "admin",
-            permissions: ["manage_users", "delete_device", "control_device", "edit_device"]
-        });
-        console.log("👑 Created default Admin: admin / password123");
+    try {
+        const count = await User.countDocuments();
+        if (count === 0) {
+            console.log("⚠️ No users found. Creating default admin...");
+            const hashedPassword = await bcrypt.hash("password123", 10);
+            await User.create({
+                username: "admin",
+                password: hashedPassword,
+                role: "admin",
+                permissions: ["manage_users", "delete_device", "control_device", "edit_device"]
+            });
+            console.log("👑 Created default Admin: admin / password123");
+        } else {
+            console.log(`✅ Found ${count} users in database.`);
+        }
+    } catch (error) {
+        console.error("❌ Init Admin Error:", error);
     }
 }
 
-// --- MIDDLEWARE ---
+// ==========================================
+// 3️⃣ เชื่อมต่อ DATABASE (ไว้หลังสุด)
+// ==========================================
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+        console.log('✅ MongoDB Connected');
+        initAdmin(); // เรียกใช้หลังจากต่อ DB ติดแล้ว
+    })
+    .catch(err => console.error('❌ DB Error:', err));
+
+// ==========================================
+// 4️⃣ MIDDLEWARE & ROUTES
+// ==========================================
+
 const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -89,12 +112,9 @@ const authenticateJWT = (req, res, next) => {
     }
 };
 
-// ตรวจสอบ Permission
 const checkPermission = (requiredPerm) => {
     return (req, res, next) => {
-        // Admin ทำได้ทุกอย่างเสมอ
         if (req.user.role === 'admin') return next();
-        
         if (req.user.permissions && req.user.permissions.includes(requiredPerm)) {
             next();
         } else {
@@ -105,28 +125,25 @@ const checkPermission = (requiredPerm) => {
 
 // --- API ROUTES ---
 
-// 1. Login (เปลี่ยนเป็นเช็ค DB)
+// Login
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    
-    if (user && await bcrypt.compare(password, user.password)) {
-        // ส่ง Permissions ไปกับ Token ด้วย Frontend จะได้รู้ว่าต้องโชว์ปุ่มไหน
-        const token = jwt.sign({ 
-            username: user.username, 
-            role: user.role,
-            permissions: user.permissions 
-        }, process.env.SECRET_KEY, { expiresIn: '12h' });
-        
-        res.json({ token, role: user.role, permissions: user.permissions });
-    } else {
-        res.status(401).send('Invalid Credentials');
-    }
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+        if (user && await bcrypt.compare(password, user.password)) {
+            const token = jwt.sign({ 
+                username: user.username, 
+                role: user.role,
+                permissions: user.permissions 
+            }, process.env.SECRET_KEY, { expiresIn: '12h' });
+            res.json({ token, role: user.role, permissions: user.permissions });
+        } else {
+            res.status(401).send('Invalid Credentials');
+        }
+    } catch (e) { res.status(500).send('Error'); }
 });
 
-// --- DEVICE MANAGEMENT ---
-
-// Get Devices (ทุกคนดูได้)
+// Get Devices
 app.get('/api/devices', authenticateJWT, async (req, res) => {
     try {
         const devices = await Device.find();
@@ -141,21 +158,21 @@ app.get('/api/devices', authenticateJWT, async (req, res) => {
     } catch (error) { res.status(500).send('Error'); }
 });
 
-// Update (Edit Device) -> เช็ค permission 'edit_device'
+// Update Device
 app.post('/api/devices/update', authenticateJWT, checkPermission('edit_device'), async (req, res) => {
     const { hostname, friendlyName, group, location } = req.body;
     await Device.updateOne({ hostname }, { friendlyName, group, location });
     res.json({ success: true });
 });
 
-// Command (Reboot/Shutdown) -> เช็ค permission 'control_device'
+// Command
 app.post('/api/devices/command', authenticateJWT, checkPermission('control_device'), async (req, res) => {
     const { hostname, command } = req.body;
     await Device.updateOne({ hostname }, { pendingCommand: command });
     res.json({ success: true });
 });
 
-// Delete Device -> เช็ค permission 'delete_device'
+// Delete Device
 app.delete('/api/devices/:hostname', authenticateJWT, checkPermission('delete_device'), async (req, res) => {
     try {
         await Device.deleteOne({ hostname: req.params.hostname });
@@ -163,9 +180,8 @@ app.delete('/api/devices/:hostname', authenticateJWT, checkPermission('delete_de
     } catch (error) { res.status(500).send('Error'); }
 });
 
-// Report from Agent (เหมือนเดิม)
+// Report from Agent
 app.post('/api/report', async (req, res) => {
-    // 🔒 Agent Secret Key
     const AGENT_SECRET_KEY = "BCGE2643AMySuperSecretKey2025";
     const clientKey = req.headers['x-agent-secret'];
     if (clientKey !== AGENT_SECRET_KEY) return res.status(403).json({ error: "Unauthorized" });
@@ -185,22 +201,19 @@ app.post('/api/report', async (req, res) => {
         res.json(responsePayload);
     } catch (error) { res.status(500).send('DB Error'); }
 });
+
 app.post('/api/upload-screen', async (req, res) => {
     const { hostname, image } = req.body;
     await Device.updateOne({ hostname }, { screenshot: image, $unset: { pendingCommand: "" } });
     res.json({ success: true });
 });
 
-
-// --- USER MANAGEMENT (Admin Only) ---
-
-// Get Users
+// --- USER MANAGEMENT ---
 app.get('/api/users', authenticateJWT, checkPermission('manage_users'), async (req, res) => {
-    const users = await User.find({}, '-password'); // ไม่ส่ง password กลับไป
+    const users = await User.find({}, '-password');
     res.json(users);
 });
 
-// Create User
 app.post('/api/users', authenticateJWT, checkPermission('manage_users'), async (req, res) => {
     const { username, password, role, permissions } = req.body;
     try {
@@ -210,18 +223,14 @@ app.post('/api/users', authenticateJWT, checkPermission('manage_users'), async (
     } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-// Update User (เปลี่ยน Password / Role / Permissions)
 app.put('/api/users/:id', authenticateJWT, checkPermission('manage_users'), async (req, res) => {
     const { password, role, permissions } = req.body;
     const updateData = { role, permissions };
-    if (password) {
-        updateData.password = await bcrypt.hash(password, 10);
-    }
+    if (password) updateData.password = await bcrypt.hash(password, 10);
     await User.findByIdAndUpdate(req.params.id, updateData);
     res.json({ success: true });
 });
 
-// Delete User
 app.delete('/api/users/:id', authenticateJWT, checkPermission('manage_users'), async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
     res.json({ success: true });
