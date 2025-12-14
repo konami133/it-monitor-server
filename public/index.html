@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IT Enterprise Monitor (RBAC)</title>
+    <title>IT Enterprise Monitor (RBAC + Full Specs)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -71,9 +71,9 @@
                             <thead>
                                 <tr class="bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     <th class="px-6 py-3">Status</th>
-                                    <th class="px-6 py-3">Name</th>
-                                    <th class="px-6 py-3">Location</th>
-                                    <th class="px-6 py-3">Info</th>
+                                    <th class="px-6 py-3">Device Name</th>
+                                    <th class="px-6 py-3">Group / Location</th>
+                                    <th class="px-6 py-3">System Info / IP / MAC</th>
                                     <th class="px-6 py-3 text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -101,10 +101,31 @@
     </div>
 
     <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-        <div class="bg-white w-[600px] rounded-lg shadow-2xl p-6 relative">
-            <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400"><i class="fas fa-times text-xl"></i></button>
-            <h3 class="text-xl font-bold mb-4">Device Specs</h3>
-            <div id="detailsContent" class="space-y-2 text-sm"></div>
+        <div class="bg-white w-[600px] rounded-lg shadow-2xl overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">Device Specifications</h3>
+                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-8">
+                <div class="flex items-start mb-6">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4"><i class="fas fa-laptop text-blue-600 text-2xl"></i></div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="det-friendlyName">-</h2>
+                        <p class="text-gray-500" id="det-hostname">-</p>
+                    </div>
+                </div>
+                <div class="space-y-4 bg-gray-50 p-6 rounded-lg border border-gray-200 text-sm">
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Processor</span><span class="col-span-2 font-medium text-gray-800" id="det-cpu">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">RAM (Type | Total)</span><span class="col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">GPU</span><span class="col-span-2 font-medium text-gray-800" id="det-gpu">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Storage Model</span><span class="col-span-2 font-medium text-gray-800" id="det-storage">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">IP Address</span><span class="col-span-2 font-mono font-medium text-indigo-600" id="det-ip">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">MAC Address</span><span class="col-span-2 font-mono font-medium text-gray-600" id="det-mac">-</span></div>
+                    
+                    <div class="grid grid-cols-3 pt-1"><span class="text-gray-500 font-bold">S/N</span><span class="col-span-2 font-mono font-bold text-gray-800 tracking-wider" id="det-serial">-</span></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -119,6 +140,14 @@
                 <button onclick="document.getElementById('editModal').classList.add('hidden')" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
                 <button onclick="saveDevice()" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
             </div>
+        </div>
+    </div>
+    
+    <div id="screenModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+        <div class="bg-white p-2 rounded-lg max-w-5xl w-full relative mx-4">
+            <button onclick="closeScreenModal()" class="absolute -top-10 right-0 text-white text-xl">Close</button>
+            <div class="flex justify-between items-center mb-2 px-2"><h3 class="font-bold">Remote View</h3><button onclick="refreshScreen()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Capture New</button></div>
+            <div id="screenContainer" class="flex justify-center items-center min-h-[400px] bg-gray-200 rounded overflow-hidden"><span class="text-gray-500 animate-pulse">Waiting...</span></div>
         </div>
     </div>
 
@@ -153,10 +182,14 @@
     </div>
 
     <script>
+        // ⚠️⚠️ แก้ URL เหมือนเดิมครับ ⚠️⚠️
         const API_URL = "https://it-monitor-server.onrender.com/api"; 
+
         let globalDevices = [];
         let globalUsers = [];
-        let currentUser = null; // { username, role, permissions }
+        let currentUser = null; 
+        let currentGroupFilter = 'ALL';
+        let currentViewingHost = null;
 
         // --- AUTH ---
         async function login() {
@@ -171,19 +204,14 @@
                 if(res.ok) {
                     const data = await res.json();
                     localStorage.setItem('token', data.token);
-                    // เก็บข้อมูล User เพื่อเอาไปเช็คสิทธิ์ UI
                     currentUser = { username: u, role: data.role, permissions: data.permissions || [] };
                     localStorage.setItem('userConfig', JSON.stringify(currentUser));
-                    
                     initSystem();
                 } else alert("Login Failed");
             } catch(e) { alert("Error: " + e); }
         }
 
-        function logout() {
-            localStorage.clear();
-            location.reload();
-        }
+        function logout() { localStorage.clear(); location.reload(); }
 
         function initSystem() {
             const token = localStorage.getItem('token');
@@ -194,11 +222,9 @@
                 document.getElementById('dashboardContent').classList.remove('hidden');
                 document.getElementById('currentUserDisplay').innerText = `${currentUser.username} (${currentUser.role})`;
                 
-                // Show/Hide Admin Menus
                 if(currentUser.role === 'admin' || currentUser.permissions.includes('manage_users')) {
                     document.getElementById('menu-users').classList.remove('hidden');
                 }
-
                 fetchDevices();
                 setInterval(fetchDevices, 5000);
             }
@@ -209,22 +235,24 @@
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-users').classList.add('hidden');
             document.getElementById(`view-${view}`).classList.remove('hidden');
-            
-            // Highlight Menu
             document.querySelectorAll('aside button').forEach(b => b.classList.remove('group-active'));
             document.getElementById(`menu-${view === 'dashboard' ? 'dash' : 'users'}`).classList.add('group-active');
-
             if(view === 'users') fetchUsers();
         }
 
-        // --- DEVICE LOGIC ---
+        // --- DEVICE LOGIC (MERGED RICH FEATURES + RBAC) ---
         async function fetchDevices() {
             const token = localStorage.getItem('token'); if(!token) return;
             try {
                 const res = await fetch(`${API_URL}/devices`, { headers: { 'Authorization': `Bearer ${token}` }});
                 if(res.ok) {
                     globalDevices = await res.json();
+                    renderSidebarGroups();
                     renderTable();
+                    if(currentViewingHost) {
+                        const target = globalDevices.find(d => d.hostname === currentViewingHost);
+                        if(target && target.screenshot) document.getElementById('screenContainer').innerHTML = `<img src="data:image/jpeg;base64,${target.screenshot}" class="max-w-full h-auto shadow-lg">`;
+                    }
                 }
             } catch(e) {}
         }
@@ -236,55 +264,132 @@
         }
 
         function renderTable() {
-            const tbody = document.getElementById('deviceTable'); 
-            tbody.innerHTML = '';
+            const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
+            let displayDevices = globalDevices;
+            if (currentGroupFilter !== 'ALL') displayDevices = globalDevices.filter(d => (d.group || 'Unassigned') === currentGroupFilter);
             
-            // คำนวณ Stats (เหมือนเดิม)
-            document.getElementById('totalCount').innerText = globalDevices.length;
-            document.getElementById('onlineCount').innerText = globalDevices.filter(d => d.status === 'online').length;
-            document.getElementById('offlineCount').innerText = globalDevices.filter(d => d.status !== 'online').length;
+            document.getElementById('totalCount').innerText = displayDevices.length;
+            document.getElementById('onlineCount').innerText = displayDevices.filter(d => d.status === 'online').length;
+            document.getElementById('offlineCount').innerText = displayDevices.filter(d => d.status !== 'online').length;
 
-            globalDevices.forEach(d => {
+            displayDevices.forEach(d => {
                 const isOnline = d.status === 'online';
-                // 🔒 สร้างปุ่มตาม Permission
+                
+                // ✅ 1. RICH FEATURE: Temp Alert
+                let tempDisplay = '';
+                if (d.cpu_temp) {
+                    if (d.cpu_temp >= 80) tempDisplay = `<span class="text-red-600 font-bold animate-pulse ml-1" title="High Temperature!"><i class="fas fa-fire"></i> ${d.cpu_temp}°C</span>`;
+                    else tempDisplay = `<span class="text-green-600 ml-1 text-[10px]"><i class="fas fa-thermometer-half"></i> ${d.cpu_temp}°C</span>`;
+                }
+
+                // ✅ 2. RICH FEATURE: HDD Alert
+                let hddStyle = "text-blue-600";
+                let hddText = d.disk_info ? d.disk_info.split('|')[0] : '-';
+                const freeSpaceMatch = hddText.match(/Free\s+([0-9.]+)\s*GB/i);
+                if (freeSpaceMatch && parseFloat(freeSpaceMatch[1]) < 20) {
+                    hddStyle = "text-red-600 font-bold animate-pulse";
+                    hddText = "⚠️ " + hddText;
+                }
+
+                // ✅ 3. SYSTEM INFO COLUMN
+                const sysInfo = `
+                    <div class="text-xs text-gray-700 space-y-1">
+                        <div class="mb-1" title="Network Info">
+                            <div class="text-indigo-600 font-mono font-bold"><i class="fas fa-network-wired w-3"></i> ${d.ip || '-'}</div>
+                            <div class="text-gray-400 font-mono text-[10px] pl-4"><i class="fas fa-fingerprint w-3"></i> ${d.mac_address || '-'}</div>
+                        </div>
+                        <div>
+                            <span class="font-bold text-gray-600"><i class="fas fa-microchip w-3"></i> CPU:</span> ${d.cpu || '0%'} ${tempDisplay}
+                            <span class="mx-1 text-gray-300">|</span> 
+                            <span class="font-bold text-gray-600">RAM:</span> ${d.ram || '0%'}
+                        </div>
+                        <div class="${hddStyle} truncate max-w-[200px]" title="${d.disk_info || ''}">
+                            <i class="fas fa-hdd w-3"></i> ${hddText}
+                        </div>
+                        <div class="${d.last_update === 'Check Failed' ? 'text-red-500' : 'text-green-600'}">
+                            <i class="fab fa-windows w-3"></i> Update: ${d.last_update || '-'}
+                        </div>
+                    </div>
+                `;
+
+                // ✅ 4. LOCATION COLUMN
+                const mapLink = (d.lat && d.lon) ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 block"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
+                const locationInfo = `
+                    <div class="text-sm font-semibold text-indigo-700">${d.group || '-'}</div>
+                    <div class="text-xs text-gray-500 font-bold">${d.location || 'Unknown Floor'}</div>
+                    <div class="text-xs text-gray-400">${d.location_city || ''}</div>
+                    ${mapLink}
+                `;
+
+                // ✅ 5. ACTION BUTTONS (With RBAC Logic)
                 let buttons = `
-                    <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="View"><i class="fas fa-eye"></i></button>
+                    <div class="flex justify-center space-x-1">
+                        <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="Specs Details"><i class="fas fa-info-circle"></i></button>
                 `;
 
                 if(hasPerm('edit_device')) {
-                    buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200 ml-1"><i class="fas fa-edit"></i></button>`;
+                    buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200" title="Edit"><i class="fas fa-edit"></i></button>`;
                 }
                 
                 if(hasPerm('control_device') && isOnline) {
                     buttons += `
-                        <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100 ml-1"><i class="fas fa-sync"></i></button>
-                        <button onclick="sendCommand('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded hover:bg-red-100 ml-1"><i class="fas fa-power-off"></i></button>
+                        <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100" title="Restart"><i class="fas fa-sync"></i></button>
+                        <button onclick="sendCommand('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded hover:bg-red-100" title="Shutdown"><i class="fas fa-power-off"></i></button>
+                        <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100" title="Remote Screen"><i class="fas fa-eye"></i></button>
                     `;
                 }
 
                 if(hasPerm('delete_device')) {
-                    buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100 ml-1"><i class="fas fa-trash"></i></button>`;
+                    buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100" title="Delete"><i class="fas fa-trash"></i></button>`;
                 }
+                buttons += `</div>`;
 
-                const statusBadge = isOnline ? `<span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded">ONLINE</span>` : `<span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded">OFFLINE</span>`;
+                const statusBadge = isOnline ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
 
                 const row = `
                     <tr class="hover:bg-gray-50 border-b border-gray-100">
-                        <td class="px-6 py-4">${statusBadge}</td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 align-top">${statusBadge}</td>
+                        <td class="px-6 py-4 align-top">
                             <div class="font-bold text-gray-800 text-sm">${d.friendlyName || d.hostname}</div>
                             <div class="text-xs text-gray-400 font-mono">${d.hostname}</div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">${d.group || '-'} / ${d.location || '-'}</td>
-                        <td class="px-6 py-4 text-xs">
-                            <div>CPU: ${d.cpu || '0%'} | RAM: ${d.ram || '0%'}</div>
-                            <div class="text-gray-400">${d.ip || ''}</div>
-                        </td>
-                        <td class="px-6 py-4 text-center flex justify-center">${buttons}</td>
+                        <td class="px-6 py-4 align-top">${locationInfo}</td>
+                        <td class="px-6 py-4 align-top">${sysInfo}</td>
+                        <td class="px-6 py-4 align-top text-center">${buttons}</td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
             });
+        }
+
+        // --- SIDEBAR & FILTER ---
+        function renderSidebarGroups() {
+            const groupListDiv = document.getElementById('groupList');
+            const groups = [...new Set(globalDevices.map(d => d.group || 'Unassigned'))].sort();
+            let html = '';
+            if(groups.includes('Unassigned')) html += createSidebarBtn('Unassigned', 'Unassigned');
+            groups.forEach(g => { if(g !== 'Unassigned') html += createSidebarBtn(g, g); });
+            groupListDiv.innerHTML = html;
+            
+            const btnId = currentGroupFilter === 'ALL' ? 'btn-ALL' : `btn-${currentGroupFilter.replace(/\s/g, '-')}`;
+            const activeBtn = document.getElementById(btnId);
+            if(activeBtn) activeBtn.classList.add('group-active');
+        }
+
+        function createSidebarBtn(label, value) {
+            const count = globalDevices.filter(d => (d.group || 'Unassigned') === value).length;
+            return `<button onclick="filterGroup('${value}')" id="btn-${value.replace(/\s/g, '-')}" class="w-full flex justify-between items-center px-4 py-2 rounded-md hover:bg-slate-800 transition text-left text-sm text-slate-400 hover:text-white mb-1">
+                    <span><i class="fas fa-folder mr-2"></i> ${label}</span><span class="bg-slate-700 text-xs px-2 py-0.5 rounded-full text-slate-300">${count}</span></button>`;
+        }
+
+        function filterGroup(groupName) {
+            currentGroupFilter = groupName;
+            document.querySelectorAll('aside button').forEach(b => b.classList.remove('group-active'));
+            const btnId = currentGroupFilter === 'ALL' ? 'btn-ALL' : `btn-${currentGroupFilter.replace(/\s/g, '-')}`;
+            const activeBtn = document.getElementById(btnId);
+            if(activeBtn) activeBtn.classList.add('group-active');
+            renderTable();
+            document.getElementById('headerTitle').innerText = groupName === 'ALL' ? 'All Devices Overview' : `Group: ${groupName}`;
         }
 
         // --- ACTIONS (Devices) ---
@@ -323,6 +428,15 @@
             alert("Command Sent");
         }
 
+        async function requestScreenshot(hostname) {
+            currentViewingHost = hostname;
+            document.getElementById('screenModal').classList.remove('hidden');
+            document.getElementById('screenContainer').innerHTML = '<span class="text-gray-500 animate-pulse">Requesting...</span>';
+            await sendCommand(hostname, 'screenshot');
+        }
+        function closeScreenModal() { document.getElementById('screenModal').classList.add('hidden'); currentViewingHost = null; }
+        function refreshScreen() { if(currentViewingHost) requestScreenshot(currentViewingHost); }
+
         async function deleteDevice(hostname) {
             if(!confirm(`Delete ${hostname}?`)) return;
             await fetch(`${API_URL}/devices/${hostname}`, { 
@@ -334,17 +448,31 @@
 
         function openDetails(hostname) {
             const d = globalDevices.find(x => x.hostname === hostname);
-            // ... (ใส่ code แสดง details เหมือนเดิม)
-            document.getElementById('detailsContent').innerHTML = `
-                <p><b>OS:</b> ${d.os}</p>
-                <p><b>CPU:</b> ${d.cpu_model}</p>
-                <p><b>RAM:</b> ${d.ram_type || ''} ${d.ram_total}</p>
-                <p><b>IP/MAC:</b> ${d.ip} / ${d.mac_address}</p>
-            `;
+            
+            document.getElementById('det-friendlyName').innerText = d.friendlyName || "Unknown Device";
+            document.getElementById('det-hostname').innerText = d.hostname;
+            document.getElementById('det-cpu').innerText = d.cpu_model || d.cpu || "Unknown";
+            
+            // ✅ RAM TYPE
+            let ramText = d.ram_total || d.ram || "Unknown";
+            if (d.ram_type && d.ram_type !== "Unknown") {
+                ramText = `${d.ram_type} | ${ramText}`;
+            }
+            document.getElementById('det-ram').innerText = ramText;
+            
+            document.getElementById('det-gpu').innerText = d.gpu || "Unknown";
+            document.getElementById('det-storage').innerText = d.storage_model || "Unknown";
+            document.getElementById('det-os').innerText = d.os || "Unknown";
+            document.getElementById('det-serial').innerText = d.serial_number || "Unknown";
+            
+            // ✅ Network Info
+            document.getElementById('det-ip').innerText = d.ip || "Unknown";
+            document.getElementById('det-mac').innerText = d.mac_address || "Unknown";
+            
             document.getElementById('detailsModal').classList.remove('hidden');
         }
 
-        // --- USER MANAGEMENT ---
+        // --- USER MANAGEMENT (ADMIN ONLY) ---
         async function fetchUsers() {
             const res = await fetch(`${API_URL}/users`, { headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} });
             if(res.ok) {
@@ -376,11 +504,9 @@
                 document.getElementById('userModalTitle').innerText = "Edit User";
                 document.getElementById('userId').value = u._id;
                 document.getElementById('formUser').value = u.username;
-                document.getElementById('formUser').disabled = true; // ห้ามแก้ชื่อ
+                document.getElementById('formUser').disabled = true;
                 document.getElementById('formPass').value = "";
                 document.getElementById('formRole').value = u.role;
-                
-                // Set Checkboxes
                 document.querySelectorAll('.perm-chk').forEach(c => c.checked = u.permissions.includes(c.value));
             } else {
                 document.getElementById('userModalTitle').innerText = "Add User";
@@ -409,16 +535,13 @@
                 role: document.getElementById('formRole').value,
                 permissions: Array.from(document.querySelectorAll('.perm-chk:checked')).map(c => c.value)
             };
-            
             const method = id ? 'PUT' : 'POST';
             const url = id ? `${API_URL}/users/${id}` : `${API_URL}/users`;
-
             await fetch(url, {
                 method: method,
                 headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`},
                 body: JSON.stringify(body)
             });
-            
             document.getElementById('userModal').classList.add('hidden');
             fetchUsers();
         }
