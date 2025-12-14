@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IT Enterprise Monitor (Responsive)</title>
+    <title>IT Enterprise Monitor (Final)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -70,7 +70,6 @@
                         <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
                     </div>
                     <button onclick="document.getElementById('searchInputMobile').classList.toggle('hidden')" class="sm:hidden text-gray-500 p-2"><i class="fas fa-search"></i></button>
-                    
                     <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow flex-shrink-0">ON</div>
                 </div>
             </header>
@@ -108,7 +107,8 @@
                         </div>
                     </div>
                     <div class="overflow-x-auto flex-1">
-                        <table class="w-full whitespace-no-wrap min-w-[800px]"> <thead>
+                        <table class="w-full whitespace-no-wrap min-w-[800px]">
+                            <thead>
                                 <tr class="bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                     <th class="px-4 py-3 md:px-6">Status / Type</th>
                                     <th class="px-4 py-3 md:px-6">Device Name</th>
@@ -241,21 +241,22 @@
         let currentStatusFilter = 'ALL';
         let currentViewingHost = null;
 
-        // --- UI FUNCTIONS FOR MOBILE ---
+        // ✅ AUTO LOGOUT CONFIG
+        let logoutTimer;
+        const AUTO_LOGOUT_TIME = 30 * 60 * 1000; // 30 นาที
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            // Toggle classes for slide effect
             if(sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full'); // Show
+                sidebar.classList.remove('-translate-x-full');
                 overlay.classList.remove('hidden');
             } else {
-                sidebar.classList.add('-translate-x-full'); // Hide
+                sidebar.classList.add('-translate-x-full'); 
                 overlay.classList.add('hidden');
             }
         }
 
-        // --- AUTH & INIT (Same Logic) ---
         async function login() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
@@ -277,7 +278,11 @@
         document.getElementById('username').addEventListener("keyup", function(e) { if(e.key==="Enter") document.getElementById("password").focus(); });
         document.getElementById('password').addEventListener("keyup", function(e) { if(e.key==="Enter") login(); });
 
-        function logout() { localStorage.clear(); location.reload(); }
+        function logout() { 
+            clearTimeout(logoutTimer);
+            localStorage.clear(); 
+            location.reload(); 
+        }
 
         function initSystem() {
             const token = localStorage.getItem('token');
@@ -291,8 +296,27 @@
                 if(currentUser.role === 'admin' || currentUser.permissions.includes('manage_users')) {
                     document.getElementById('menu-users').classList.remove('hidden');
                 }
+                
+                startAutoLogout(); // ✅ เริ่มจับเวลา
                 fetchDevices();
                 setInterval(fetchDevices, 5000);
+            }
+        }
+
+        // ✅ AUTO LOGOUT LOGIC
+        function startAutoLogout() {
+            const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
+            events.forEach(evt => document.addEventListener(evt, resetLogoutTimer));
+            resetLogoutTimer();
+        }
+
+        function resetLogoutTimer() {
+            clearTimeout(logoutTimer);
+            if (localStorage.getItem('token')) {
+                logoutTimer = setTimeout(() => {
+                    alert("Session timed out due to inactivity (30 mins).");
+                    logout();
+                }, AUTO_LOGOUT_TIME);
             }
         }
 
@@ -305,7 +329,6 @@
             if(view === 'users') fetchUsers();
         }
 
-        // --- DEVICE LOGIC ---
         async function fetchDevices() {
             const token = localStorage.getItem('token'); if(!token) return;
             try {
@@ -362,7 +385,6 @@
 
             displayDevices.forEach(d => {
                 const isOnline = d.status === 'online';
-                
                 let connIcon = '';
                 if(isOnline) {
                     if(d.connection_type === 'internet') connIcon = `<i class="fas fa-globe text-blue-500 ml-1" title="Cloud"></i>`;
@@ -387,19 +409,14 @@
                     hddText = "⚠️ " + hddText;
                 }
 
-                // Layout Adjustments for Mobile
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
                         <div class="mb-1" title="Network">
                             <div class="text-indigo-600 font-mono font-bold truncate max-w-[120px] md:max-w-none">${d.ip || '-'}</div>
                             <div class="text-gray-400 font-mono text-[10px] hidden md:block pl-2">${d.mac_address || ''}</div>
                         </div>
-                        <div>
-                            <span class="font-bold text-gray-600">CPU:</span> ${d.cpu || '0%'} ${tempDisplay}
-                        </div>
-                        <div class="${hddStyle} truncate max-w-[150px] md:max-w-[200px]" title="${d.disk_info || ''}">
-                             ${hddText}
-                        </div>
+                        <div><span class="font-bold text-gray-600">CPU:</span> ${d.cpu || '0%'} ${tempDisplay}</div>
+                        <div class="${hddStyle} truncate max-w-[150px] md:max-w-[200px]" title="${d.disk_info || ''}">${hddText}</div>
                     </div>
                 `;
 
@@ -408,31 +425,20 @@
                     <div class="text-xs text-gray-500 font-bold truncate">${d.location || ''}</div>
                 `;
 
-                // Mobile-friendly Buttons (Icon Only on small screens)
-                let buttons = `
-                    <div class="flex justify-center gap-1">
-                        <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100"><i class="fas fa-info-circle"></i></button>
-                `;
+                let buttons = `<div class="flex justify-center gap-1"><button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100"><i class="fas fa-info-circle"></i></button>`;
                 if(hasPerm('edit_device')) buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200"><i class="fas fa-edit"></i></button>`;
-                
                 if(hasPerm('control_device') && isOnline) {
                     buttons += `
                         <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100 hidden sm:block"><i class="fas fa-sync"></i></button>
                         <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100"><i class="fas fa-eye"></i></button>
                     `;
                 }
-                
-                // Dropdown menu for more actions on mobile could be better, but we keep it simple for now
                 if(hasPerm('delete_device')) buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100 hidden md:block"><i class="fas fa-trash"></i></button>`;
-                
                 buttons += `</div>`;
 
                 const row = `
                     <tr class="hover:bg-gray-50 border-b border-gray-100">
-                        <td class="px-4 py-3 md:px-6 align-top">
-                            <div>${statusBadge}</div>
-                            <div class="mt-1">${connIcon}</div>
-                        </td>
+                        <td class="px-4 py-3 md:px-6 align-top"><div>${statusBadge}</div><div class="mt-1">${connIcon}</div></td>
                         <td class="px-4 py-3 md:px-6 align-top">
                             <div class="font-bold text-gray-800 text-sm truncate max-w-[120px] md:max-w-none">${d.friendlyName || d.hostname}</div>
                             <div class="text-xs text-gray-400 font-mono truncate max-w-[100px] md:max-w-none">${d.hostname}</div>
@@ -449,16 +455,8 @@
         function exportToExcel() {
             if(globalDevices.length === 0) { alert("No data to export"); return; }
             const dataToExport = globalDevices.map(d => ({
-                "Hostname": d.hostname,
-                "Name": d.friendlyName || "-",
-                "Group": d.group || "-",
-                "Status": d.status,
-                "IP": d.ip,
-                "MAC": d.mac_address,
-                "OS": d.os,
-                "CPU": d.cpu_model,
-                "RAM": d.ram_total,
-                "Disk": d.disk_info
+                "Hostname": d.hostname, "Name": d.friendlyName || "-", "Group": d.group || "-", "Status": d.status,
+                "IP": d.ip, "MAC": d.mac_address, "OS": d.os, "CPU": d.cpu_model, "RAM": d.ram_total, "Disk": d.disk_info
             }));
             const ws = XLSX.utils.json_to_sheet(dataToExport);
             const wb = XLSX.utils.book_new();
@@ -466,7 +464,6 @@
             XLSX.writeFile(wb, `IT_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // Sidebar & Groups
         function renderSidebarGroups() {
             const groupListDiv = document.getElementById('groupList');
             const groups = [...new Set(globalDevices.map(d => d.group || 'Unassigned'))].sort();
@@ -496,7 +493,6 @@
             return currentUser.permissions.includes(perm);
         }
 
-        // Actions
         function openEdit(hostname) {
             const d = globalDevices.find(x => x.hostname === hostname);
             document.getElementById('editHostname').value = hostname;
