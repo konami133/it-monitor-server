@@ -15,8 +15,10 @@ app.use(cors());
 app.use(express.static('public'));
 
 // ==========================================
-// 1️⃣ USER SCHEMA (ประกาศก่อนใช้งานเสมอ)
+// 1️⃣ ประกาศ SCHEMA ให้ครบ (สำคัญมาก!)
 // ==========================================
+
+// User Schema
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -25,9 +27,7 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// ==========================================
-// 2️⃣ DEVICE SCHEMA (เพิ่มตัวแปรที่ขาดให้ครบ)
-// ==========================================
+// Device Schema (เพิ่มช่องเก็บของที่หายไป)
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
@@ -36,9 +36,9 @@ const deviceSchema = new mongoose.Schema({
     ip: String,
     public_ip: String,
     mac_address: String,
-    connection_type: String, // internet / local
+    connection_type: String, 
     
-    // ✅ เพิ่มส่วนที่หายไปกลับมา (Gatekeeper รู้จักแล้ว!)
+    // ✅ เพิ่มส่วนนี้เพื่อให้เก็บ Spec ได้ครบ
     os: String,            
     cpu_model: String,     
     gpu: String,           
@@ -46,8 +46,7 @@ const deviceSchema = new mongoose.Schema({
     ram_type: String,      
     storage_model: String, 
     serial_number: String, 
-    // -------------------------------
-
+    
     location_city: String,
     isp: String,
     lat: Number,
@@ -66,7 +65,7 @@ const deviceSchema = new mongoose.Schema({
 const Device = mongoose.model('Device', deviceSchema);
 
 // ==========================================
-// 3️⃣ สร้าง ADMIN และเชื่อมต่อ DB
+// 2️⃣ ฟังก์ชันสร้าง ADMIN
 // ==========================================
 async function initAdmin() {
     try {
@@ -87,16 +86,20 @@ async function initAdmin() {
     }
 }
 
+// ==========================================
+// 3️⃣ เชื่อมต่อ DB (และเริ่มระบบ)
+// ==========================================
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
         console.log('✅ MongoDB Connected');
-        initAdmin();
+        initAdmin(); // เรียกใช้หลังจากต่อ DB ติดแล้ว
     })
     .catch(err => console.error('❌ DB Error:', err));
 
 // ==========================================
-// 4️⃣ MIDDLEWARE & ROUTES
+// 4️⃣ API ROUTES
 // ==========================================
+
 const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -128,12 +131,7 @@ app.post('/api/login', async (req, res) => {
         const { username, password } = req.body;
         const user = await User.findOne({ username });
         if (user && await bcrypt.compare(password, user.password)) {
-            const token = jwt.sign({ 
-                username: user.username, 
-                role: user.role, 
-                permissions: user.permissions,
-                _id: user._id 
-            }, process.env.SECRET_KEY, { expiresIn: '12h' });
+            const token = jwt.sign({ username: user.username, role: user.role, permissions: user.permissions, _id: user._id }, process.env.SECRET_KEY, { expiresIn: '12h' });
             res.json({ token, role: user.role, permissions: user.permissions });
         } else {
             res.status(401).send('Invalid Credentials');
@@ -175,7 +173,7 @@ app.delete('/api/devices/:hostname', authenticateJWT, checkPermission('delete_de
     } catch (error) { res.status(500).send('Error'); }
 });
 
-// Report Endpoint
+// Report Endpoint (รับข้อมูลจาก Agent)
 app.post('/api/report', async (req, res) => {
     const AGENT_SECRET_KEY = "BCGE2643AMySuperSecretKey2025";
     const clientKey = req.headers['x-agent-secret'];
@@ -183,6 +181,7 @@ app.post('/api/report', async (req, res) => {
 
     const data = req.body;
     try {
+        // อัปเดตข้อมูลทุกอย่างที่ส่งมา (รวมถึง GPU, Storage ที่เพิ่มใหม่)
         const device = await Device.findOneAndUpdate(
             { hostname: data.hostname },
             { ...data, last_seen: new Date(), isAlerted: false },
