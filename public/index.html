@@ -2,228 +2,264 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IT Enterprise Monitor (Pro)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IT Enterprise Monitor (Responsive)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .group-active { background-color: #2563eb; color: white; }
-        .card-active { border-color: #2563eb; background-color: #eff6ff; } /* Highlight การ์ดที่เลือก */
+        .card-active { border-color: #2563eb; background-color: #eff6ff; }
+        /* Smooth Sidebar Transition */
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex overflow-hidden">
 
-    <div id="loginModal" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-lg shadow-2xl w-96 text-center">
+    <div id="loginModal" class="fixed inset-0 bg-slate-900 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
             <h2 class="text-2xl font-bold mb-6 text-gray-800">System Login</h2>
-            <input type="text" id="username" placeholder="Username" class="w-full p-3 border bg-gray-50 mb-4 rounded">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 border bg-gray-50 mb-6 rounded">
-            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-semibold hover:bg-blue-700">LOGIN</button>
+            <input type="text" id="username" placeholder="Username" class="w-full p-3 border bg-gray-50 mb-4 rounded text-lg">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 border bg-gray-50 mb-6 rounded text-lg">
+            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-semibold hover:bg-blue-700 active:scale-95 transition text-lg">LOGIN</button>
         </div>
     </div>
 
-    <div id="dashboardContent" class="hidden w-full h-full flex">
-        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl flex-shrink-0">
-            <div class="h-16 flex items-center justify-center border-b border-slate-700 bg-slate-800 text-white font-bold text-xl">
-                IT MONITOR
+    <div id="dashboardContent" class="hidden w-full h-full flex relative">
+        
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden glass"></div>
+
+        <aside id="sidebar" class="sidebar-transition absolute md:relative z-30 w-64 h-full bg-slate-900 text-slate-300 flex flex-col shadow-xl flex-shrink-0 transform -translate-x-full md:translate-x-0">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-slate-700 bg-slate-800 text-white font-bold text-xl">
+                <span>IT MONITOR</span>
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
             
             <div class="p-4 space-y-1">
-                <button onclick="switchView('dashboard')" class="w-full text-left px-4 py-2 hover:bg-slate-800 rounded group-active" id="menu-dash">
-                    <i class="fas fa-desktop mr-2"></i> Dashboard
+                <button onclick="switchView('dashboard'); toggleSidebar()" class="w-full text-left px-4 py-3 hover:bg-slate-800 rounded group-active" id="menu-dash">
+                    <i class="fas fa-desktop mr-3"></i> Dashboard
                 </button>
-                <button onclick="switchView('users')" class="hidden w-full text-left px-4 py-2 hover:bg-slate-800 rounded text-yellow-400" id="menu-users">
-                    <i class="fas fa-users-cog mr-2"></i> User Management
+                <button onclick="switchView('users'); toggleSidebar()" class="hidden w-full text-left px-4 py-3 hover:bg-slate-800 rounded text-yellow-400" id="menu-users">
+                    <i class="fas fa-users-cog mr-3"></i> Users
                 </button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-4 border-t border-slate-800 mt-2">
                 <p class="text-xs uppercase text-slate-500 font-bold mb-2">Device Groups</p>
-                <button onclick="filterGroup('ALL')" id="btn-ALL" class="w-full text-left px-4 py-2 hover:bg-slate-800 rounded text-sm mb-1">All Devices</button>
+                <button onclick="filterGroup('ALL'); toggleSidebar()" id="btn-ALL" class="w-full text-left px-4 py-2 hover:bg-slate-800 rounded text-sm mb-1">All Devices</button>
                 <div id="groupList" class="space-y-1"></div>
             </div>
             <div class="p-4 border-t border-slate-700">
-                <div class="text-xs text-gray-500 mb-2">Logged in as: <span id="currentUserDisplay" class="text-white font-bold"></span></div>
-                <button onclick="logout()" class="text-red-400 w-full text-left hover:text-red-300"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <div class="text-xs text-gray-500 mb-2">User: <span id="currentUserDisplay" class="text-white font-bold"></span></div>
+                <button onclick="logout()" class="text-red-400 w-full text-left hover:text-red-300 py-2"><i class="fas fa-sign-out-alt mr-2"></i> Logout</button>
             </div>
         </aside>
 
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-10">
-                <h2 class="text-lg font-semibold text-gray-700" id="headerTitle">Dashboard</h2>
-                <div class="flex items-center space-x-4">
-                     <div class="relative">
-                        <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Search hostname, ip..." class="pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500 w-64">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+        <div class="flex-1 flex flex-col overflow-hidden w-full">
+            <header class="h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 z-10 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="md:hidden text-gray-600 text-xl p-2"><i class="fas fa-bars"></i></button>
+                    <h2 class="text-lg font-semibold text-gray-700 truncate max-w-[150px] md:max-w-none" id="headerTitle">Dashboard</h2>
+                </div>
+                
+                <div class="flex items-center gap-2 md:gap-4">
+                    <div class="relative hidden sm:block">
+                        <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Search..." class="pl-9 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500 w-40 md:w-64 transition-all">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
                     </div>
-                    <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow">ON</div>
+                    <button onclick="document.getElementById('searchInputMobile').classList.toggle('hidden')" class="sm:hidden text-gray-500 p-2"><i class="fas fa-search"></i></button>
+                    
+                    <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow flex-shrink-0">ON</div>
                 </div>
             </header>
+            
+            <div id="searchInputMobile" class="hidden bg-gray-50 p-2 border-b sm:hidden">
+                <input type="text" onkeyup="document.getElementById('searchInput').value=this.value; renderTable()" placeholder="Search hostname, ip..." class="w-full p-2 border rounded text-sm">
+            </div>
 
-            <main id="view-dashboard" class="flex-1 overflow-x-hidden overflow-y-auto p-6">
-                <div class="grid grid-cols-3 gap-6 mb-6">
-                    <div onclick="filterStatus('ALL')" id="card-ALL" class="bg-white p-5 rounded border-l-4 border-blue-500 shadow-sm cursor-pointer hover:bg-gray-50 transition card-active">
-                        <div class="text-gray-500 text-sm font-bold uppercase">Total Devices</div>
-                        <div class="text-3xl font-bold text-gray-800 mt-1" id="totalCount">0</div>
+            <main id="view-dashboard" class="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div onclick="filterStatus('ALL')" id="card-ALL" class="bg-white p-4 md:p-5 rounded border-l-4 border-blue-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition card-active flex justify-between items-center sm:block">
+                        <div class="text-gray-500 text-sm font-bold uppercase">Total</div>
+                        <div class="text-2xl md:text-3xl font-bold text-gray-800" id="totalCount">0</div>
                     </div>
-                    <div onclick="filterStatus('online')" id="card-online" class="bg-white p-5 rounded border-l-4 border-green-500 shadow-sm cursor-pointer hover:bg-gray-50 transition">
+                    <div onclick="filterStatus('online')" id="card-online" class="bg-white p-4 md:p-5 rounded border-l-4 border-green-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition flex justify-between items-center sm:block">
                         <div class="text-green-600 text-sm font-bold uppercase">Online</div>
-                        <div class="text-3xl font-bold text-green-700 mt-1" id="onlineCount">0</div>
+                        <div class="text-2xl md:text-3xl font-bold text-green-700" id="onlineCount">0</div>
                     </div>
-                    <div onclick="filterStatus('offline')" id="card-offline" class="bg-white p-5 rounded border-l-4 border-red-500 shadow-sm cursor-pointer hover:bg-gray-50 transition">
+                    <div onclick="filterStatus('offline')" id="card-offline" class="bg-white p-4 md:p-5 rounded border-l-4 border-red-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition flex justify-between items-center sm:block">
                         <div class="text-red-500 text-sm font-bold uppercase">Offline</div>
-                        <div class="text-3xl font-bold text-red-600 mt-1" id="offlineCount">0</div>
+                        <div class="text-2xl md:text-3xl font-bold text-red-600" id="offlineCount">0</div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded shadow overflow-hidden">
-                    <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
-                        <h3 class="font-bold text-gray-700">Device List <span id="filterLabel" class="text-xs font-normal text-gray-500 ml-2">(All)</span></h3>
-                        <div class="flex space-x-2">
-                             <button onclick="exportToExcel()" class="text-green-600 hover:text-green-800 text-sm font-bold border border-green-600 px-3 py-1 rounded hover:bg-green-50 transition">
-                                <i class="fas fa-file-excel mr-1"></i> Export Excel
+                <div class="bg-white rounded shadow flex flex-col h-auto">
+                    <div class="px-4 py-3 md:px-6 md:py-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-gray-50">
+                        <h3 class="font-bold text-gray-700 text-sm md:text-base">Device List <span id="filterLabel" class="text-xs font-normal text-gray-500">(All)</span></h3>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button onclick="exportToExcel()" class="flex-1 sm:flex-none text-green-600 hover:text-green-800 text-xs md:text-sm font-bold border border-green-600 px-3 py-1.5 rounded hover:bg-green-50 transition text-center justify-center flex items-center">
+                                <i class="fas fa-file-excel mr-1"></i> Export
                             </button>
-                            <button onclick="fetchDevices()" class="text-blue-500 hover:text-blue-700 text-sm font-medium px-3 py-1">
-                                <i class="fas fa-sync-alt"></i> Refresh
+                            <button onclick="fetchDevices()" class="flex-1 sm:flex-none text-blue-500 hover:text-blue-700 text-xs md:text-sm font-medium border border-blue-500 px-3 py-1.5 rounded hover:bg-blue-50 text-center justify-center flex items-center">
+                                <i class="fas fa-sync-alt mr-1"></i> Refresh
                             </button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full whitespace-no-wrap" id="mainTable">
-                            <thead>
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full whitespace-no-wrap min-w-[800px]"> <thead>
                                 <tr class="bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                    <th class="px-6 py-3">Status / Conn</th>
-                                    <th class="px-6 py-3">Device Name</th>
-                                    <th class="px-6 py-3">Group / Location</th>
-                                    <th class="px-6 py-3">System Info / IP / MAC</th>
-                                    <th class="px-6 py-3 text-center">Actions</th>
+                                    <th class="px-4 py-3 md:px-6">Status / Type</th>
+                                    <th class="px-4 py-3 md:px-6">Device Name</th>
+                                    <th class="px-4 py-3 md:px-6">Info</th>
+                                    <th class="px-4 py-3 md:px-6">Hardware</th>
+                                    <th class="px-4 py-3 md:px-6 text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="deviceTable" class="bg-white divide-y divide-gray-100"></tbody>
+                            <tbody id="deviceTable" class="bg-white divide-y divide-gray-100 text-sm"></tbody>
                         </table>
                     </div>
                 </div>
             </main>
 
-            <main id="view-users" class="hidden flex-1 overflow-x-hidden overflow-y-auto p-6">
+            <main id="view-users" class="hidden flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
                 <div class="bg-white rounded shadow overflow-hidden">
                     <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
                         <h3 class="font-bold text-gray-700">User Management</h3>
-                        <button onclick="openUserModal()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"><i class="fas fa-plus"></i> Add User</button>
+                        <button onclick="openUserModal()" class="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"><i class="fas fa-plus mr-1"></i> Add</button>
                     </div>
-                    <table class="w-full">
-                        <thead class="bg-gray-100 text-xs font-bold text-gray-600 uppercase text-left">
-                            <tr><th class="px-6 py-3">Username</th><th class="px-6 py-3">Role</th><th class="px-6 py-3">Permissions</th><th class="px-6 py-3 text-center">Manage</th></tr>
-                        </thead>
-                        <tbody id="userTable" class="divide-y divide-gray-100"></tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[600px]">
+                            <thead class="bg-gray-100 text-xs font-bold text-gray-600 uppercase text-left">
+                                <tr><th class="px-6 py-3">Username</th><th class="px-6 py-3">Role</th><th class="px-6 py-3">Permissions</th><th class="px-6 py-3 text-center">Manage</th></tr>
+                            </thead>
+                            <tbody id="userTable" class="divide-y divide-gray-100 text-sm"></tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>
     </div>
 
-    <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-        <div class="bg-white w-[600px] rounded-lg shadow-2xl overflow-hidden relative">
-             <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+    <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
+             <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-2"><i class="fas fa-times text-xl"></i></button>
             <div class="bg-gray-50 px-6 py-4 border-b">
-                <h3 class="text-xl font-bold text-gray-800">Device Specifications</h3>
+                <h3 class="text-lg font-bold text-gray-800">Device Specifications</h3>
             </div>
-            <div class="p-8">
-                <div class="flex items-start mb-6">
-                    <div class="bg-blue-100 p-3 rounded-lg mr-4"><i class="fas fa-laptop text-blue-600 text-2xl"></i></div>
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900" id="det-friendlyName">-</h2>
-                        <p class="text-gray-500" id="det-hostname">-</p>
+            <div class="p-6 overflow-y-auto">
+                <div class="flex items-center mb-6">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4 flex-shrink-0"><i class="fas fa-laptop text-blue-600 text-2xl"></i></div>
+                    <div class="overflow-hidden">
+                        <h2 class="text-xl font-bold text-gray-900 truncate" id="det-friendlyName">-</h2>
+                        <p class="text-gray-500 text-sm font-mono truncate" id="det-hostname">-</p>
                     </div>
                 </div>
-                <div class="space-y-4 bg-gray-50 p-6 rounded-lg border border-gray-200 text-sm">
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Processor</span><span class="col-span-2 font-medium text-gray-800" id="det-cpu">-</span></div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">RAM (Type | Total)</span><span class="col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">GPU</span><span class="col-span-2 font-medium text-gray-800" id="det-gpu">-</span></div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Storage Model</span><span class="col-span-2 font-medium text-gray-800" id="det-storage">-</span></div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">IP Address</span><span class="col-span-2 font-mono font-medium text-indigo-600" id="det-ip">-</span></div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">MAC Address</span><span class="col-span-2 font-mono font-medium text-gray-600" id="det-mac">-</span></div>
-                    <div class="grid grid-cols-3 pt-1"><span class="text-gray-500 font-bold">S/N</span><span class="col-span-2 font-mono font-bold text-gray-800 tracking-wider" id="det-serial">-</span></div>
+                <div class="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">Processor</span><span class="sm:col-span-2 font-medium text-gray-800 break-words" id="det-cpu">-</span></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">RAM</span><span class="sm:col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">GPU</span><span class="sm:col-span-2 font-medium text-gray-800 break-words" id="det-gpu">-</span></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">Storage</span><span class="sm:col-span-2 font-medium text-gray-800 break-words" id="det-storage">-</span></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">OS</span><span class="sm:col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">IP Addr</span><span class="sm:col-span-2 font-mono font-medium text-indigo-600" id="det-ip">-</span></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">MAC</span><span class="sm:col-span-2 font-mono font-medium text-gray-600" id="det-mac">-</span></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1"><span class="text-gray-500 font-bold">Serial</span><span class="sm:col-span-2 font-mono font-bold text-gray-800 tracking-wider break-all" id="det-serial">-</span></div>
                 </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 text-right">
+                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 w-full sm:w-auto">Close</button>
             </div>
         </div>
     </div>
 
-    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg w-96 shadow-xl">
-            <h3 class="text-xl font-bold mb-4">Edit Device</h3>
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg w-full max-w-sm shadow-xl">
+            <h3 class="text-lg font-bold mb-4">Edit Device</h3>
             <input type="hidden" id="editHostname">
-            <input type="text" id="editName" class="w-full border p-2 rounded mb-2" placeholder="Friendly Name">
-            <input type="text" id="editGroup" class="w-full border p-2 rounded mb-2" placeholder="Group">
-            <input type="text" id="editLocation" class="w-full border p-2 rounded mb-4" placeholder="Location">
-            <div class="flex justify-end space-x-2">
-                <button onclick="document.getElementById('editModal').classList.add('hidden')" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-                <button onclick="saveDevice()" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+            <input type="text" id="editName" class="w-full border p-3 rounded mb-3 text-sm" placeholder="Friendly Name">
+            <input type="text" id="editGroup" class="w-full border p-3 rounded mb-3 text-sm" placeholder="Group">
+            <input type="text" id="editLocation" class="w-full border p-3 rounded mb-6 text-sm" placeholder="Location">
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('editModal').classList.add('hidden')" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+                <button onclick="saveDevice()" class="flex-1 bg-blue-600 text-white py-2 rounded">Save</button>
             </div>
         </div>
     </div>
     
-    <div id="screenModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-        <div class="bg-white p-2 rounded-lg max-w-5xl w-full relative mx-4">
-            <button onclick="closeScreenModal()" class="absolute -top-10 right-0 text-white text-xl">Close</button>
-            <div class="flex justify-between items-center mb-2 px-2"><h3 class="font-bold">Remote View</h3><button onclick="refreshScreen()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Capture New</button></div>
-            <div id="screenContainer" class="flex justify-center items-center min-h-[400px] bg-gray-200 rounded overflow-hidden"><span class="text-gray-500 animate-pulse">Waiting...</span></div>
-        </div>
-    </div>
-
-    <div id="userModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg w-[500px] shadow-xl">
-            <h3 class="text-xl font-bold mb-4" id="userModalTitle">Add User</h3>
+    <div id="userModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
+            <h3 class="text-lg font-bold mb-4" id="userModalTitle">Add User</h3>
             <input type="hidden" id="userId">
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div><label class="text-xs font-bold">Username</label><input type="text" id="formUser" class="w-full border p-2 rounded"></div>
-                <div><label class="text-xs font-bold">Password</label><input type="password" id="formPass" class="w-full border p-2 rounded" placeholder="Leave blank to keep"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div><label class="text-xs font-bold text-gray-500">Username</label><input type="text" id="formUser" class="w-full border p-2 rounded mt-1"></div>
+                <div><label class="text-xs font-bold text-gray-500">Password</label><input type="password" id="formPass" class="w-full border p-2 rounded mt-1" placeholder="Leave empty to keep"></div>
             </div>
             <div class="mb-4">
-                <label class="text-xs font-bold">Role</label>
-                <select id="formRole" class="w-full border p-2 rounded" onchange="togglePermissions()">
+                <label class="text-xs font-bold text-gray-500">Role</label>
+                <select id="formRole" class="w-full border p-2 rounded mt-1" onchange="togglePermissions()">
                     <option value="staff">Staff</option>
                     <option value="admin">System Admin</option>
                 </select>
             </div>
-            <div class="mb-4 p-3 bg-gray-50 rounded border" id="permSection">
-                <label class="text-xs font-bold block mb-2">Permissions (for Staff)</label>
-                <div class="space-y-2">
-                    <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="edit_device"> Edit Device Info (Name, Loc)</label>
-                    <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="control_device"> Control (Reboot/Shutdown)</label>
-                    <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="delete_device"> Delete Device</label>
+            <div class="mb-6 p-3 bg-gray-50 rounded border" id="permSection">
+                <label class="text-xs font-bold block mb-2 text-gray-500">Permissions</label>
+                <div class="space-y-3">
+                    <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="edit_device"> <span class="text-sm">Edit Info</span></label>
+                    <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="control_device"> <span class="text-sm">Control (Reboot)</span></label>
+                    <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="delete_device"> <span class="text-sm">Delete Device</span></label>
                 </div>
             </div>
-            <div class="flex justify-end space-x-2">
+            <div class="flex justify-end gap-2">
                 <button onclick="document.getElementById('userModal').classList.add('hidden')" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
                 <button onclick="saveUser()" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
             </div>
         </div>
     </div>
-
+    
+    <div id="screenModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-[70] flex items-center justify-center p-2">
+        <div class="bg-white p-2 rounded-lg w-full max-w-5xl relative mx-auto flex flex-col h-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-2 px-2">
+                <h3 class="font-bold">Remote View</h3>
+                <div class="flex gap-2">
+                     <button onclick="refreshScreen()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs"><i class="fas fa-camera"></i> Capture</button>
+                     <button onclick="closeScreenModal()" class="bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs">Close</button>
+                </div>
+            </div>
+            <div id="screenContainer" class="flex-1 flex justify-center items-center bg-gray-200 rounded overflow-hidden relative">
+                <span class="text-gray-500 animate-pulse absolute">Waiting for image...</span>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // ✅ ปรับ URL ให้ยืดหยุ่น (ใช้ Relative path)
         const API_URL = "/api"; 
-
         let globalDevices = [];
         let globalUsers = [];
         let currentUser = null; 
         let currentGroupFilter = 'ALL';
-        let currentStatusFilter = 'ALL'; // ✅ ตัวกรองสถานะ (ALL, online, offline)
+        let currentStatusFilter = 'ALL';
         let currentViewingHost = null;
 
-        // --- AUTH ---
+        // --- UI FUNCTIONS FOR MOBILE ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            // Toggle classes for slide effect
+            if(sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full'); // Show
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full'); // Hide
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // --- AUTH & INIT (Same Logic) ---
         async function login() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
             try {
-                // ถ้าเป็น Relative Path ต้องต่อเต็มตอน Login เพราะอาจจะข้ามเครื่องไม่ได้
-                // *หมายเหตุ: ถ้าใช้ /api เฉยๆ แล้ว Login ไม่ได้ ให้ลองใส่ IP ตรงนี้ชั่วคราว แต่ปกติควรได้
                 const res = await fetch(`${API_URL}/login`, { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
@@ -238,8 +274,6 @@
                 } else alert("Login Failed");
             } catch(e) { alert("Error: " + e); }
         }
-
-        // กด Enter เพื่อ Login
         document.getElementById('username').addEventListener("keyup", function(e) { if(e.key==="Enter") document.getElementById("password").focus(); });
         document.getElementById('password').addEventListener("keyup", function(e) { if(e.key==="Enter") login(); });
 
@@ -252,7 +286,7 @@
                 currentUser = JSON.parse(savedUser);
                 document.getElementById('loginModal').classList.add('hidden');
                 document.getElementById('dashboardContent').classList.remove('hidden');
-                document.getElementById('currentUserDisplay').innerText = `${currentUser.username} (${currentUser.role})`;
+                document.getElementById('currentUserDisplay').innerText = `${currentUser.username}`;
                 
                 if(currentUser.role === 'admin' || currentUser.permissions.includes('manage_users')) {
                     document.getElementById('menu-users').classList.remove('hidden');
@@ -280,18 +314,16 @@
                     globalDevices = await res.json();
                     renderSidebarGroups();
                     renderTable();
-                    updateCounts(); // อัปเดตตัวเลขในการ์ด
-                    
+                    updateCounts();
                     if(currentViewingHost) {
                         const target = globalDevices.find(d => d.hostname === currentViewingHost);
-                        if(target && target.screenshot) document.getElementById('screenContainer').innerHTML = `<img src="data:image/jpeg;base64,${target.screenshot}" class="max-w-full h-auto shadow-lg">`;
+                        if(target && target.screenshot) document.getElementById('screenContainer').innerHTML = `<img src="data:image/jpeg;base64,${target.screenshot}" class="max-w-full h-auto shadow-lg object-contain h-full">`;
                     }
                 }
             } catch(e) {}
         }
 
         function updateCounts() {
-            // อัปเดตตัวเลขในการ์ด Dashboard
             const total = globalDevices.length;
             const online = globalDevices.filter(d => d.status === 'online').length;
             const offline = globalDevices.filter(d => d.status !== 'online').length;
@@ -300,43 +332,30 @@
             document.getElementById('offlineCount').innerText = offline;
         }
 
-        // ✅ ฟังก์ชันกรองจากการคลิกการ์ด
         function filterStatus(status) {
             currentStatusFilter = status;
-            
-            // Highlight การ์ดที่เลือก
             ['ALL', 'online', 'offline'].forEach(s => {
                 const card = document.getElementById(`card-${s}`);
-                if(s === status) card.classList.add('card-active', 'border-blue-500'); // ใช้ class ที่เราสร้าง
+                if(s === status) card.classList.add('card-active', 'border-blue-500');
                 else card.classList.remove('card-active', 'border-blue-500');
             });
-            
             renderTable();
         }
 
         function renderTable() {
             const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
-            
-            // ✅ Logic การกรอง 3 ชั้น (Group + Status + Search)
             const searchText = document.getElementById('searchInput').value.toLowerCase();
             
             let displayDevices = globalDevices.filter(d => {
-                // 1. กรอง Group
                 const matchGroup = currentGroupFilter === 'ALL' || (d.group || 'Unassigned') === currentGroupFilter;
-                
-                // 2. กรอง Status (จากการคลิกการ์ด)
                 let matchStatus = true;
                 if(currentStatusFilter === 'online') matchStatus = d.status === 'online';
                 if(currentStatusFilter === 'offline') matchStatus = d.status !== 'online';
-                
-                // 3. กรอง Search Bar
                 const searchStr = `${d.hostname} ${d.friendlyName} ${d.ip} ${d.group}`.toLowerCase();
                 const matchSearch = searchStr.includes(searchText);
-
                 return matchGroup && matchStatus && matchSearch;
             });
 
-            // อัปเดตป้ายบอก Filter
             let filterText = `(${currentGroupFilter})`;
             if(currentStatusFilter !== 'ALL') filterText += ` [${currentStatusFilter.toUpperCase()}]`;
             document.getElementById('filterLabel').innerText = filterText;
@@ -344,25 +363,22 @@
             displayDevices.forEach(d => {
                 const isOnline = d.status === 'online';
                 
-                // ✅ Logic แสดง Connection Type (Internet vs Local)
                 let connIcon = '';
                 if(isOnline) {
-                    if(d.connection_type === 'internet') connIcon = `<i class="fas fa-globe text-blue-500 ml-2" title="Via Cloud"></i>`;
-                    else if(d.connection_type === 'local') connIcon = `<i class="fas fa-building text-orange-500 ml-2" title="Via Local Gateway"></i>`;
+                    if(d.connection_type === 'internet') connIcon = `<i class="fas fa-globe text-blue-500 ml-1" title="Cloud"></i>`;
+                    else if(d.connection_type === 'local') connIcon = `<i class="fas fa-building text-orange-500 ml-1" title="Local"></i>`;
                 }
 
                 const statusBadge = isOnline 
                     ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` 
                     : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
 
-                // Temp Alert
                 let tempDisplay = '';
                 if (d.cpu_temp) {
-                    if (d.cpu_temp >= 80) tempDisplay = `<span class="text-red-600 font-bold animate-pulse ml-1" title="High Temperature!"><i class="fas fa-fire"></i> ${d.cpu_temp}°C</span>`;
-                    else tempDisplay = `<span class="text-green-600 ml-1 text-[10px]"><i class="fas fa-thermometer-half"></i> ${d.cpu_temp}°C</span>`;
+                    if (d.cpu_temp >= 80) tempDisplay = `<span class="text-red-600 font-bold animate-pulse block md:inline" title="High Temperature!"><i class="fas fa-fire"></i> ${d.cpu_temp}°C</span>`;
+                    else tempDisplay = `<span class="text-green-600 block md:inline text-[10px]"><i class="fas fa-thermometer-half"></i> ${d.cpu_temp}°C</span>`;
                 }
 
-                // HDD Alert
                 let hddStyle = "text-blue-600";
                 let hddText = d.disk_info ? d.disk_info.split('|')[0] : '-';
                 const freeSpaceMatch = hddText.match(/Free\s+([0-9.]+)\s*GB/i);
@@ -371,100 +387,86 @@
                     hddText = "⚠️ " + hddText;
                 }
 
-                // Info Column
+                // Layout Adjustments for Mobile
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
-                        <div class="mb-1" title="Network Info">
-                            <div class="text-indigo-600 font-mono font-bold"><i class="fas fa-network-wired w-3"></i> ${d.ip || '-'}</div>
-                            <div class="text-gray-400 font-mono text-[10px] pl-4"><i class="fas fa-fingerprint w-3"></i> ${d.mac_address || '-'}</div>
+                        <div class="mb-1" title="Network">
+                            <div class="text-indigo-600 font-mono font-bold truncate max-w-[120px] md:max-w-none">${d.ip || '-'}</div>
+                            <div class="text-gray-400 font-mono text-[10px] hidden md:block pl-2">${d.mac_address || ''}</div>
                         </div>
                         <div>
-                            <span class="font-bold text-gray-600"><i class="fas fa-microchip w-3"></i> CPU:</span> ${d.cpu || '0%'} ${tempDisplay}
-                            <span class="mx-1 text-gray-300">|</span> 
-                            <span class="font-bold text-gray-600">RAM:</span> ${d.ram || '0%'}
+                            <span class="font-bold text-gray-600">CPU:</span> ${d.cpu || '0%'} ${tempDisplay}
                         </div>
-                        <div class="${hddStyle} truncate max-w-[200px]" title="${d.disk_info || ''}">
-                            <i class="fas fa-hdd w-3"></i> ${hddText}
-                        </div>
-                        <div class="${d.last_update === 'Check Failed' ? 'text-red-500' : 'text-green-600'}">
-                            <i class="fab fa-windows w-3"></i> Update: ${d.last_update || '-'}
+                        <div class="${hddStyle} truncate max-w-[150px] md:max-w-[200px]" title="${d.disk_info || ''}">
+                             ${hddText}
                         </div>
                     </div>
                 `;
 
-                const mapLink = (d.lat && d.lon) ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 block"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
                 const locationInfo = `
-                    <div class="text-sm font-semibold text-indigo-700">${d.group || '-'}</div>
-                    <div class="text-xs text-gray-500 font-bold">${d.location || 'Unknown Floor'}</div>
-                    <div class="text-xs text-gray-400">${d.location_city || ''}</div>
-                    ${mapLink}
+                    <div class="text-sm font-semibold text-indigo-700 truncate max-w-[100px] md:max-w-none">${d.group || '-'}</div>
+                    <div class="text-xs text-gray-500 font-bold truncate">${d.location || ''}</div>
                 `;
 
-                // Actions
+                // Mobile-friendly Buttons (Icon Only on small screens)
                 let buttons = `
-                    <div class="flex justify-center space-x-1">
-                        <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="Specs Details"><i class="fas fa-info-circle"></i></button>
+                    <div class="flex justify-center gap-1">
+                        <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100"><i class="fas fa-info-circle"></i></button>
                 `;
-                if(hasPerm('edit_device')) buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200" title="Edit"><i class="fas fa-edit"></i></button>`;
+                if(hasPerm('edit_device')) buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200"><i class="fas fa-edit"></i></button>`;
+                
                 if(hasPerm('control_device') && isOnline) {
                     buttons += `
-                        <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100" title="Restart"><i class="fas fa-sync"></i></button>
-                        <button onclick="sendCommand('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded hover:bg-red-100" title="Shutdown"><i class="fas fa-power-off"></i></button>
-                        <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100" title="Remote Screen"><i class="fas fa-eye"></i></button>
+                        <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100 hidden sm:block"><i class="fas fa-sync"></i></button>
+                        <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100"><i class="fas fa-eye"></i></button>
                     `;
                 }
-                if(hasPerm('delete_device')) buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100" title="Delete"><i class="fas fa-trash"></i></button>`;
+                
+                // Dropdown menu for more actions on mobile could be better, but we keep it simple for now
+                if(hasPerm('delete_device')) buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100 hidden md:block"><i class="fas fa-trash"></i></button>`;
+                
                 buttons += `</div>`;
 
                 const row = `
                     <tr class="hover:bg-gray-50 border-b border-gray-100">
-                        <td class="px-6 py-4 align-top">
+                        <td class="px-4 py-3 md:px-6 align-top">
                             <div>${statusBadge}</div>
                             <div class="mt-1">${connIcon}</div>
                         </td>
-                        <td class="px-6 py-4 align-top">
-                            <div class="font-bold text-gray-800 text-sm">${d.friendlyName || d.hostname}</div>
-                            <div class="text-xs text-gray-400 font-mono">${d.hostname}</div>
+                        <td class="px-4 py-3 md:px-6 align-top">
+                            <div class="font-bold text-gray-800 text-sm truncate max-w-[120px] md:max-w-none">${d.friendlyName || d.hostname}</div>
+                            <div class="text-xs text-gray-400 font-mono truncate max-w-[100px] md:max-w-none">${d.hostname}</div>
                         </td>
-                        <td class="px-6 py-4 align-top">${locationInfo}</td>
-                        <td class="px-6 py-4 align-top">${sysInfo}</td>
-                        <td class="px-6 py-4 align-top text-center">${buttons}</td>
+                        <td class="px-4 py-3 md:px-6 align-top hidden sm:table-cell">${locationInfo}</td>
+                        <td class="px-4 py-3 md:px-6 align-top">${sysInfo}</td>
+                        <td class="px-4 py-3 md:px-6 align-top text-center">${buttons}</td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
             });
         }
 
-        // ✅ ฟังก์ชัน Export Excel
         function exportToExcel() {
             if(globalDevices.length === 0) { alert("No data to export"); return; }
-            
-            // เตรียมข้อมูลให้สวยงามสำหรับ Excel
             const dataToExport = globalDevices.map(d => ({
                 "Hostname": d.hostname,
-                "Friendly Name": d.friendlyName || "-",
+                "Name": d.friendlyName || "-",
                 "Group": d.group || "-",
-                "Location": d.location || "-",
                 "Status": d.status,
-                "Connection": d.connection_type || "-",
-                "IP Address": d.ip,
-                "MAC Address": d.mac_address,
+                "IP": d.ip,
+                "MAC": d.mac_address,
                 "OS": d.os,
-                "CPU Model": d.cpu_model,
-                "RAM Total": d.ram_total,
-                "Disk Info": d.disk_info,
-                "Last User": d.last_update
+                "CPU": d.cpu_model,
+                "RAM": d.ram_total,
+                "Disk": d.disk_info
             }));
-
             const ws = XLSX.utils.json_to_sheet(dataToExport);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Devices");
-            
-            // Download File
-            XLSX.writeFile(wb, `IT_Monitor_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.writeFile(wb, `IT_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // ... (ฟังก์ชันอื่นๆ: renderSidebarGroups, createSidebarBtn, filterGroup, openEdit, etc. เหมือนเดิม) ...
+        // Sidebar & Groups
         function renderSidebarGroups() {
             const groupListDiv = document.getElementById('groupList');
             const groups = [...new Set(globalDevices.map(d => d.group || 'Unassigned'))].sort();
@@ -473,27 +475,28 @@
             groups.forEach(g => { if(g !== 'Unassigned') html += createSidebarBtn(g, g); });
             groupListDiv.innerHTML = html;
             const btnId = currentGroupFilter === 'ALL' ? 'btn-ALL' : `btn-${currentGroupFilter.replace(/\s/g, '-')}`;
-            const activeBtn = document.getElementById(btnId);
-            if(activeBtn) activeBtn.classList.add('group-active');
+            if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('group-active');
         }
         function createSidebarBtn(label, value) {
             const count = globalDevices.filter(d => (d.group || 'Unassigned') === value).length;
-            return `<button onclick="filterGroup('${value}')" id="btn-${value.replace(/\s/g, '-')}" class="w-full flex justify-between items-center px-4 py-2 rounded-md hover:bg-slate-800 transition text-left text-sm text-slate-400 hover:text-white mb-1">
+            return `<button onclick="filterGroup('${value}'); toggleSidebar()" id="btn-${value.replace(/\s/g, '-')}" class="w-full flex justify-between items-center px-4 py-2 rounded-md hover:bg-slate-800 transition text-left text-sm text-slate-400 hover:text-white mb-1">
                     <span><i class="fas fa-folder mr-2"></i> ${label}</span><span class="bg-slate-700 text-xs px-2 py-0.5 rounded-full text-slate-300">${count}</span></button>`;
         }
         function filterGroup(groupName) {
             currentGroupFilter = groupName;
             document.querySelectorAll('aside button').forEach(b => b.classList.remove('group-active'));
             const btnId = currentGroupFilter === 'ALL' ? 'btn-ALL' : `btn-${currentGroupFilter.replace(/\s/g, '-')}`;
-            const activeBtn = document.getElementById(btnId);
-            if(activeBtn) activeBtn.classList.add('group-active');
+            if(document.getElementById(btnId)) document.getElementById(btnId).classList.add('group-active');
             renderTable();
         }
+
         function hasPerm(perm) {
             if(!currentUser) return false;
             if(currentUser.role === 'admin') return true;
             return currentUser.permissions.includes(perm);
         }
+
+        // Actions
         function openEdit(hostname) {
             const d = globalDevices.find(x => x.hostname === hostname);
             document.getElementById('editHostname').value = hostname;
@@ -503,28 +506,14 @@
             document.getElementById('editModal').classList.remove('hidden');
         }
         async function saveDevice() {
-            const body = {
-                hostname: document.getElementById('editHostname').value,
-                friendlyName: document.getElementById('editName').value,
-                group: document.getElementById('editGroup').value,
-                location: document.getElementById('editLocation').value
-            };
-            await fetch(`${API_URL}/devices/update`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`},
-                body: JSON.stringify(body)
-            });
-            document.getElementById('editModal').classList.add('hidden');
-            fetchDevices();
+            const body = { hostname: document.getElementById('editHostname').value, friendlyName: document.getElementById('editName').value, group: document.getElementById('editGroup').value, location: document.getElementById('editLocation').value };
+            await fetch(`${API_URL}/devices/update`, { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`}, body: JSON.stringify(body) });
+            document.getElementById('editModal').classList.add('hidden'); fetchDevices();
         }
         async function sendCommand(hostname, cmd) {
-            if(!confirm(`Confirm ${cmd} ${hostname}?`)) return;
-            await fetch(`${API_URL}/devices/command`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`},
-                body: JSON.stringify({hostname, command: cmd})
-            });
-            alert("Command Sent");
+            if(!confirm(`${cmd} ${hostname}?`)) return;
+            await fetch(`${API_URL}/devices/command`, { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`}, body: JSON.stringify({hostname, command: cmd}) });
+            alert("Sent");
         }
         async function requestScreenshot(hostname) {
             currentViewingHost = hostname;
@@ -536,28 +525,27 @@
         function refreshScreen() { if(currentViewingHost) requestScreenshot(currentViewingHost); }
         async function deleteDevice(hostname) {
             if(!confirm(`Delete ${hostname}?`)) return;
-            await fetch(`${API_URL}/devices/${hostname}`, { 
-                method: 'DELETE', 
-                headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-            });
+            await fetch(`${API_URL}/devices/${hostname}`, { method: 'DELETE', headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} });
             fetchDevices();
         }
+
         function openDetails(hostname) {
             const d = globalDevices.find(x => x.hostname === hostname);
-            document.getElementById('det-friendlyName').innerText = d.friendlyName || "Unknown Device";
+            document.getElementById('det-friendlyName').innerText = d.friendlyName || "Unknown";
             document.getElementById('det-hostname').innerText = d.hostname;
-            document.getElementById('det-cpu').innerText = d.cpu_model || d.cpu || "Unknown";
-            let ramText = d.ram_total || d.ram || "Unknown";
+            document.getElementById('det-cpu').innerText = d.cpu_model || d.cpu;
+            let ramText = d.ram_total || d.ram;
             if (d.ram_type && d.ram_type !== "Unknown") ramText = `${d.ram_type} | ${ramText}`;
             document.getElementById('det-ram').innerText = ramText;
-            document.getElementById('det-gpu').innerText = d.gpu || "Unknown";
-            document.getElementById('det-storage').innerText = d.storage_model || "Unknown";
-            document.getElementById('det-os').innerText = d.os || "Unknown";
-            document.getElementById('det-serial').innerText = d.serial_number || "Unknown";
-            document.getElementById('det-ip').innerText = d.ip || "Unknown";
-            document.getElementById('det-mac').innerText = d.mac_address || "Unknown";
+            document.getElementById('det-gpu').innerText = d.gpu || "-";
+            document.getElementById('det-storage').innerText = d.storage_model || "-";
+            document.getElementById('det-os').innerText = d.os;
+            document.getElementById('det-ip').innerText = d.ip;
+            document.getElementById('det-mac').innerText = d.mac_address || "-";
+            document.getElementById('det-serial').innerText = d.serial_number || "-";
             document.getElementById('detailsModal').classList.remove('hidden');
         }
+
         async function fetchUsers() {
             const res = await fetch(`${API_URL}/users`, { headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} });
             if(res.ok) {
@@ -565,38 +553,26 @@
                 const tbody = document.getElementById('userTable');
                 tbody.innerHTML = '';
                 globalUsers.forEach(u => {
-                    const row = `
-                        <tr class="border-b">
-                            <td class="px-6 py-4 font-bold text-gray-700">${u.username}</td>
-                            <td class="px-6 py-4"><span class="bg-gray-200 px-2 py-1 rounded text-xs font-bold ${u.role==='admin'?'text-blue-700':'text-gray-700'}">${u.role.toUpperCase()}</span></td>
-                            <td class="px-6 py-4 text-xs text-gray-500">${u.role==='admin' ? 'ALL ACCESS' : u.permissions.join(', ')}</td>
-                            <td class="px-6 py-4 text-center">
-                                <button onclick="openUserModal('${u._id}')" class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-edit"></i></button>
-                                ${u.username !== 'admin' ? `<button onclick="deleteUser('${u._id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>` : ''}
-                            </td>
-                        </tr>
-                    `;
+                    const row = `<tr class="border-b"><td class="px-6 py-4 font-bold">${u.username}</td><td class="px-6 py-4">${u.role}</td><td class="px-6 py-4 text-xs">${u.role==='admin'?'ALL':u.permissions.join(', ')}</td><td class="px-6 py-4 text-center"><button onclick="openUserModal('${u._id}')" class="text-blue-500 mr-2"><i class="fas fa-edit"></i></button>${u.username!=='admin'?`<button onclick="deleteUser('${u._id}')" class="text-red-500"><i class="fas fa-trash"></i></button>`:''}</td></tr>`;
                     tbody.innerHTML += row;
                 });
             }
         }
+        
         function openUserModal(id = null) {
-            const modal = document.getElementById('userModal');
-            modal.classList.remove('hidden');
+            const modal = document.getElementById('userModal'); modal.classList.remove('hidden');
             if(id) {
                 const u = globalUsers.find(x => x._id === id);
                 document.getElementById('userModalTitle').innerText = "Edit User";
                 document.getElementById('userId').value = u._id;
-                document.getElementById('formUser').value = u.username;
-                document.getElementById('formUser').disabled = true;
+                document.getElementById('formUser').value = u.username; document.getElementById('formUser').disabled = true;
                 document.getElementById('formPass').value = "";
                 document.getElementById('formRole').value = u.role;
                 document.querySelectorAll('.perm-chk').forEach(c => c.checked = u.permissions.includes(c.value));
             } else {
                 document.getElementById('userModalTitle').innerText = "Add User";
                 document.getElementById('userId').value = "";
-                document.getElementById('formUser').value = "";
-                document.getElementById('formUser').disabled = false;
+                document.getElementById('formUser').value = ""; document.getElementById('formUser').disabled = false;
                 document.getElementById('formPass').value = "";
                 document.getElementById('formRole').value = "staff";
                 document.querySelectorAll('.perm-chk').forEach(c => c.checked = false);
@@ -611,21 +587,10 @@
         }
         async function saveUser() {
             const id = document.getElementById('userId').value;
-            const body = {
-                username: document.getElementById('formUser').value,
-                password: document.getElementById('formPass').value,
-                role: document.getElementById('formRole').value,
-                permissions: Array.from(document.querySelectorAll('.perm-chk:checked')).map(c => c.value)
-            };
-            const method = id ? 'PUT' : 'POST';
-            const url = id ? `${API_URL}/users/${id}` : `${API_URL}/users`;
-            await fetch(url, {
-                method: method,
-                headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`},
-                body: JSON.stringify(body)
-            });
-            document.getElementById('userModal').classList.add('hidden');
-            fetchUsers();
+            const body = { username: document.getElementById('formUser').value, password: document.getElementById('formPass').value, role: document.getElementById('formRole').value, permissions: Array.from(document.querySelectorAll('.perm-chk:checked')).map(c => c.value) };
+            const method = id ? 'PUT' : 'POST'; const url = id ? `${API_URL}/users/${id}` : `${API_URL}/users`;
+            await fetch(url, { method: method, headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`}, body: JSON.stringify(body) });
+            document.getElementById('userModal').classList.add('hidden'); fetchUsers();
         }
         async function deleteUser(id) {
             if(!confirm("Delete this user?")) return;
