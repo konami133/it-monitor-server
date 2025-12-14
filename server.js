@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const app = express();
-const port = process.env.PORT || 10000; // Render มักจะใช้ Port 10000 หรือ Environment Variable
+const port = process.env.PORT || 10000;
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
@@ -15,10 +15,8 @@ app.use(cors());
 app.use(express.static('public'));
 
 // ==========================================
-// 1️⃣ กำหนด SCHEMAS & MODELS (ไว้บนสุด!)
+// 1️⃣ USER SCHEMA (ประกาศก่อนใช้งานเสมอ)
 // ==========================================
-
-// User Schema
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -27,7 +25,9 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// Device Schema
+// ==========================================
+// 2️⃣ DEVICE SCHEMA (เพิ่มตัวแปรที่ขาดให้ครบ)
+// ==========================================
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
@@ -37,22 +37,27 @@ const deviceSchema = new mongoose.Schema({
     public_ip: String,
     mac_address: String,
     connection_type: String, // internet / local
+    
+    // ✅ เพิ่มส่วนที่หายไปกลับมา (Gatekeeper รู้จักแล้ว!)
+    os: String,            
+    cpu_model: String,     
+    gpu: String,           
+    ram_total: String,     
+    ram_type: String,      
+    storage_model: String, 
+    serial_number: String, 
+    // -------------------------------
+
     location_city: String,
     isp: String,
     lat: Number,
     lon: Number,
-    os: String,
     cpu_temp: Number,  
-    ram_type: String, 
     cpu: String,       
     ram: String,       
-    cpu_model: String, 
-    ram_total: String, 
     disk_info: String,
     last_update: String,
-    serial_number: String,
-    gpu: String,
-    storage_model: String,
+    
     last_seen: { type: Date, default: Date.now },
     pendingCommand: String,
     screenshot: String,
@@ -61,7 +66,7 @@ const deviceSchema = new mongoose.Schema({
 const Device = mongoose.model('Device', deviceSchema);
 
 // ==========================================
-// 2️⃣ ฟังก์ชันสร้าง ADMIN (ต้องอยู่หลัง Model)
+// 3️⃣ สร้าง ADMIN และเชื่อมต่อ DB
 // ==========================================
 async function initAdmin() {
     try {
@@ -75,29 +80,23 @@ async function initAdmin() {
                 role: "admin",
                 permissions: ["manage_users", "delete_device", "control_device", "edit_device"]
             });
-            console.log("👑 Created default Admin: admin / password123");
-        } else {
-            console.log(`✅ Found ${count} users in database.`);
+            console.log("👑 Created default Admin.");
         }
     } catch (error) {
         console.error("❌ Init Admin Error:", error);
     }
 }
 
-// ==========================================
-// 3️⃣ เชื่อมต่อ DATABASE (ไว้หลังสุด)
-// ==========================================
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
         console.log('✅ MongoDB Connected');
-        initAdmin(); // เรียกใช้หลังจากต่อ DB ติดแล้ว
+        initAdmin();
     })
     .catch(err => console.error('❌ DB Error:', err));
 
 // ==========================================
 // 4️⃣ MIDDLEWARE & ROUTES
 // ==========================================
-
 const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -118,12 +117,10 @@ const checkPermission = (requiredPerm) => {
         if (req.user.permissions && req.user.permissions.includes(requiredPerm)) {
             next();
         } else {
-            res.status(403).json({ error: "Access Denied: Insufficient Permissions" });
+            res.status(403).json({ error: "Access Denied" });
         }
     };
 };
-
-// --- API ROUTES ---
 
 // Login
 app.post('/api/login', async (req, res) => {
@@ -133,8 +130,9 @@ app.post('/api/login', async (req, res) => {
         if (user && await bcrypt.compare(password, user.password)) {
             const token = jwt.sign({ 
                 username: user.username, 
-                role: user.role,
-                permissions: user.permissions 
+                role: user.role, 
+                permissions: user.permissions,
+                _id: user._id 
             }, process.env.SECRET_KEY, { expiresIn: '12h' });
             res.json({ token, role: user.role, permissions: user.permissions });
         } else {
@@ -143,7 +141,7 @@ app.post('/api/login', async (req, res) => {
     } catch (e) { res.status(500).send('Error'); }
 });
 
-// Get Devices
+// Devices
 app.get('/api/devices', authenticateJWT, async (req, res) => {
     try {
         const devices = await Device.find();
@@ -158,21 +156,18 @@ app.get('/api/devices', authenticateJWT, async (req, res) => {
     } catch (error) { res.status(500).send('Error'); }
 });
 
-// Update Device
 app.post('/api/devices/update', authenticateJWT, checkPermission('edit_device'), async (req, res) => {
     const { hostname, friendlyName, group, location } = req.body;
     await Device.updateOne({ hostname }, { friendlyName, group, location });
     res.json({ success: true });
 });
 
-// Command
 app.post('/api/devices/command', authenticateJWT, checkPermission('control_device'), async (req, res) => {
     const { hostname, command } = req.body;
     await Device.updateOne({ hostname }, { pendingCommand: command });
     res.json({ success: true });
 });
 
-// Delete Device
 app.delete('/api/devices/:hostname', authenticateJWT, checkPermission('delete_device'), async (req, res) => {
     try {
         await Device.deleteOne({ hostname: req.params.hostname });
@@ -180,7 +175,7 @@ app.delete('/api/devices/:hostname', authenticateJWT, checkPermission('delete_de
     } catch (error) { res.status(500).send('Error'); }
 });
 
-// Report from Agent
+// Report Endpoint
 app.post('/api/report', async (req, res) => {
     const AGENT_SECRET_KEY = "BCGE2643AMySuperSecretKey2025";
     const clientKey = req.headers['x-agent-secret'];
@@ -208,7 +203,7 @@ app.post('/api/upload-screen', async (req, res) => {
     res.json({ success: true });
 });
 
-// --- USER MANAGEMENT ---
+// Users Management
 app.get('/api/users', authenticateJWT, checkPermission('manage_users'), async (req, res) => {
     const users = await User.find({}, '-password');
     res.json(users);
