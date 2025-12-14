@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IT Enterprise Monitor (RBAC + Full Specs)</title>
+    <title>IT Enterprise Monitor (Pro)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .group-active { background-color: #2563eb; color: white; }
+        .card-active { border-color: #2563eb; background-color: #eff6ff; } /* Highlight การ์ดที่เลือก */
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex overflow-hidden">
@@ -52,25 +54,48 @@
         <div class="flex-1 flex flex-col overflow-hidden">
             <header class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-10">
                 <h2 class="text-lg font-semibold text-gray-700" id="headerTitle">Dashboard</h2>
-                <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow">ON</div>
+                <div class="flex items-center space-x-4">
+                     <div class="relative">
+                        <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Search hostname, ip..." class="pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500 w-64">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow">ON</div>
+                </div>
             </header>
 
             <main id="view-dashboard" class="flex-1 overflow-x-hidden overflow-y-auto p-6">
                 <div class="grid grid-cols-3 gap-6 mb-6">
-                    <div class="bg-white p-5 rounded border-l-4 border-blue-500 shadow-sm"><div>Total</div><div class="text-2xl font-bold" id="totalCount">0</div></div>
-                    <div class="bg-white p-5 rounded border-l-4 border-green-500 shadow-sm"><div>Online</div><div class="text-2xl font-bold text-green-600" id="onlineCount">0</div></div>
-                    <div class="bg-white p-5 rounded border-l-4 border-red-500 shadow-sm"><div>Offline</div><div class="text-2xl font-bold text-red-600" id="offlineCount">0</div></div>
+                    <div onclick="filterStatus('ALL')" id="card-ALL" class="bg-white p-5 rounded border-l-4 border-blue-500 shadow-sm cursor-pointer hover:bg-gray-50 transition card-active">
+                        <div class="text-gray-500 text-sm font-bold uppercase">Total Devices</div>
+                        <div class="text-3xl font-bold text-gray-800 mt-1" id="totalCount">0</div>
+                    </div>
+                    <div onclick="filterStatus('online')" id="card-online" class="bg-white p-5 rounded border-l-4 border-green-500 shadow-sm cursor-pointer hover:bg-gray-50 transition">
+                        <div class="text-green-600 text-sm font-bold uppercase">Online</div>
+                        <div class="text-3xl font-bold text-green-700 mt-1" id="onlineCount">0</div>
+                    </div>
+                    <div onclick="filterStatus('offline')" id="card-offline" class="bg-white p-5 rounded border-l-4 border-red-500 shadow-sm cursor-pointer hover:bg-gray-50 transition">
+                        <div class="text-red-500 text-sm font-bold uppercase">Offline</div>
+                        <div class="text-3xl font-bold text-red-600 mt-1" id="offlineCount">0</div>
+                    </div>
                 </div>
+
                 <div class="bg-white rounded shadow overflow-hidden">
                     <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
-                        <h3 class="font-bold text-gray-700">Device List</h3>
-                        <button onclick="fetchDevices()" class="text-blue-500 hover:text-blue-700 text-sm font-medium"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        <h3 class="font-bold text-gray-700">Device List <span id="filterLabel" class="text-xs font-normal text-gray-500 ml-2">(All)</span></h3>
+                        <div class="flex space-x-2">
+                             <button onclick="exportToExcel()" class="text-green-600 hover:text-green-800 text-sm font-bold border border-green-600 px-3 py-1 rounded hover:bg-green-50 transition">
+                                <i class="fas fa-file-excel mr-1"></i> Export Excel
+                            </button>
+                            <button onclick="fetchDevices()" class="text-blue-500 hover:text-blue-700 text-sm font-medium px-3 py-1">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full whitespace-no-wrap">
+                        <table class="w-full whitespace-no-wrap" id="mainTable">
                             <thead>
                                 <tr class="bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                    <th class="px-6 py-3">Status</th>
+                                    <th class="px-6 py-3">Status / Conn</th>
                                     <th class="px-6 py-3">Device Name</th>
                                     <th class="px-6 py-3">Group / Location</th>
                                     <th class="px-6 py-3">System Info / IP / MAC</th>
@@ -101,10 +126,10 @@
     </div>
 
     <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-        <div class="bg-white w-[600px] rounded-lg shadow-2xl overflow-hidden">
-            <div class="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
+        <div class="bg-white w-[600px] rounded-lg shadow-2xl overflow-hidden relative">
+             <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            <div class="bg-gray-50 px-6 py-4 border-b">
                 <h3 class="text-xl font-bold text-gray-800">Device Specifications</h3>
-                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
             </div>
             <div class="p-8">
                 <div class="flex items-start mb-6">
@@ -122,7 +147,6 @@
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">IP Address</span><span class="col-span-2 font-mono font-medium text-indigo-600" id="det-ip">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">MAC Address</span><span class="col-span-2 font-mono font-medium text-gray-600" id="det-mac">-</span></div>
-                    
                     <div class="grid grid-cols-3 pt-1"><span class="text-gray-500 font-bold">S/N</span><span class="col-span-2 font-mono font-bold text-gray-800 tracking-wider" id="det-serial">-</span></div>
                 </div>
             </div>
@@ -181,14 +205,16 @@
         </div>
     </div>
 
+
     <script>
-        // ⚠️⚠️ แก้ URL เหมือนเดิมครับ ⚠️⚠️
-        const API_URL = "https://it-monitor-server.onrender.com/api"; 
+        // ✅ ปรับ URL ให้ยืดหยุ่น (ใช้ Relative path)
+        const API_URL = "/api"; 
 
         let globalDevices = [];
         let globalUsers = [];
         let currentUser = null; 
         let currentGroupFilter = 'ALL';
+        let currentStatusFilter = 'ALL'; // ✅ ตัวกรองสถานะ (ALL, online, offline)
         let currentViewingHost = null;
 
         // --- AUTH ---
@@ -196,6 +222,8 @@
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
             try {
+                // ถ้าเป็น Relative Path ต้องต่อเต็มตอน Login เพราะอาจจะข้ามเครื่องไม่ได้
+                // *หมายเหตุ: ถ้าใช้ /api เฉยๆ แล้ว Login ไม่ได้ ให้ลองใส่ IP ตรงนี้ชั่วคราว แต่ปกติควรได้
                 const res = await fetch(`${API_URL}/login`, { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
@@ -210,6 +238,10 @@
                 } else alert("Login Failed");
             } catch(e) { alert("Error: " + e); }
         }
+
+        // กด Enter เพื่อ Login
+        document.getElementById('username').addEventListener("keyup", function(e) { if(e.key==="Enter") document.getElementById("password").focus(); });
+        document.getElementById('password').addEventListener("keyup", function(e) { if(e.key==="Enter") login(); });
 
         function logout() { localStorage.clear(); location.reload(); }
 
@@ -230,7 +262,6 @@
             }
         }
 
-        // --- UI SWITCHING ---
         function switchView(view) {
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-users').classList.add('hidden');
@@ -240,7 +271,7 @@
             if(view === 'users') fetchUsers();
         }
 
-        // --- DEVICE LOGIC (MERGED RICH FEATURES + RBAC) ---
+        // --- DEVICE LOGIC ---
         async function fetchDevices() {
             const token = localStorage.getItem('token'); if(!token) return;
             try {
@@ -249,6 +280,8 @@
                     globalDevices = await res.json();
                     renderSidebarGroups();
                     renderTable();
+                    updateCounts(); // อัปเดตตัวเลขในการ์ด
+                    
                     if(currentViewingHost) {
                         const target = globalDevices.find(d => d.hostname === currentViewingHost);
                         if(target && target.screenshot) document.getElementById('screenContainer').innerHTML = `<img src="data:image/jpeg;base64,${target.screenshot}" class="max-w-full h-auto shadow-lg">`;
@@ -257,32 +290,79 @@
             } catch(e) {}
         }
 
-        function hasPerm(perm) {
-            if(!currentUser) return false;
-            if(currentUser.role === 'admin') return true;
-            return currentUser.permissions.includes(perm);
+        function updateCounts() {
+            // อัปเดตตัวเลขในการ์ด Dashboard
+            const total = globalDevices.length;
+            const online = globalDevices.filter(d => d.status === 'online').length;
+            const offline = globalDevices.filter(d => d.status !== 'online').length;
+            document.getElementById('totalCount').innerText = total;
+            document.getElementById('onlineCount').innerText = online;
+            document.getElementById('offlineCount').innerText = offline;
+        }
+
+        // ✅ ฟังก์ชันกรองจากการคลิกการ์ด
+        function filterStatus(status) {
+            currentStatusFilter = status;
+            
+            // Highlight การ์ดที่เลือก
+            ['ALL', 'online', 'offline'].forEach(s => {
+                const card = document.getElementById(`card-${s}`);
+                if(s === status) card.classList.add('card-active', 'border-blue-500'); // ใช้ class ที่เราสร้าง
+                else card.classList.remove('card-active', 'border-blue-500');
+            });
+            
+            renderTable();
         }
 
         function renderTable() {
             const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
-            let displayDevices = globalDevices;
-            if (currentGroupFilter !== 'ALL') displayDevices = globalDevices.filter(d => (d.group || 'Unassigned') === currentGroupFilter);
             
-            document.getElementById('totalCount').innerText = displayDevices.length;
-            document.getElementById('onlineCount').innerText = displayDevices.filter(d => d.status === 'online').length;
-            document.getElementById('offlineCount').innerText = displayDevices.filter(d => d.status !== 'online').length;
+            // ✅ Logic การกรอง 3 ชั้น (Group + Status + Search)
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            
+            let displayDevices = globalDevices.filter(d => {
+                // 1. กรอง Group
+                const matchGroup = currentGroupFilter === 'ALL' || (d.group || 'Unassigned') === currentGroupFilter;
+                
+                // 2. กรอง Status (จากการคลิกการ์ด)
+                let matchStatus = true;
+                if(currentStatusFilter === 'online') matchStatus = d.status === 'online';
+                if(currentStatusFilter === 'offline') matchStatus = d.status !== 'online';
+                
+                // 3. กรอง Search Bar
+                const searchStr = `${d.hostname} ${d.friendlyName} ${d.ip} ${d.group}`.toLowerCase();
+                const matchSearch = searchStr.includes(searchText);
+
+                return matchGroup && matchStatus && matchSearch;
+            });
+
+            // อัปเดตป้ายบอก Filter
+            let filterText = `(${currentGroupFilter})`;
+            if(currentStatusFilter !== 'ALL') filterText += ` [${currentStatusFilter.toUpperCase()}]`;
+            document.getElementById('filterLabel').innerText = filterText;
 
             displayDevices.forEach(d => {
                 const isOnline = d.status === 'online';
                 
-                // ✅ 1. RICH FEATURE: Temp Alert
+                // ✅ Logic แสดง Connection Type (Internet vs Local)
+                let connIcon = '';
+                if(isOnline) {
+                    if(d.connection_type === 'internet') connIcon = `<i class="fas fa-globe text-blue-500 ml-2" title="Via Cloud"></i>`;
+                    else if(d.connection_type === 'local') connIcon = `<i class="fas fa-building text-orange-500 ml-2" title="Via Local Gateway"></i>`;
+                }
+
+                const statusBadge = isOnline 
+                    ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` 
+                    : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
+
+                // Temp Alert
                 let tempDisplay = '';
                 if (d.cpu_temp) {
                     if (d.cpu_temp >= 80) tempDisplay = `<span class="text-red-600 font-bold animate-pulse ml-1" title="High Temperature!"><i class="fas fa-fire"></i> ${d.cpu_temp}°C</span>`;
                     else tempDisplay = `<span class="text-green-600 ml-1 text-[10px]"><i class="fas fa-thermometer-half"></i> ${d.cpu_temp}°C</span>`;
                 }
 
-                // ✅ 2. RICH FEATURE: HDD Alert
+                // HDD Alert
                 let hddStyle = "text-blue-600";
                 let hddText = d.disk_info ? d.disk_info.split('|')[0] : '-';
                 const freeSpaceMatch = hddText.match(/Free\s+([0-9.]+)\s*GB/i);
@@ -291,7 +371,7 @@
                     hddText = "⚠️ " + hddText;
                 }
 
-                // ✅ 3. SYSTEM INFO COLUMN
+                // Info Column
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
                         <div class="mb-1" title="Network Info">
@@ -312,7 +392,6 @@
                     </div>
                 `;
 
-                // ✅ 4. LOCATION COLUMN
                 const mapLink = (d.lat && d.lon) ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 block"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
                 const locationInfo = `
                     <div class="text-sm font-semibold text-indigo-700">${d.group || '-'}</div>
@@ -321,16 +400,12 @@
                     ${mapLink}
                 `;
 
-                // ✅ 5. ACTION BUTTONS (With RBAC Logic)
+                // Actions
                 let buttons = `
                     <div class="flex justify-center space-x-1">
                         <button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100" title="Specs Details"><i class="fas fa-info-circle"></i></button>
                 `;
-
-                if(hasPerm('edit_device')) {
-                    buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200" title="Edit"><i class="fas fa-edit"></i></button>`;
-                }
-                
+                if(hasPerm('edit_device')) buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200" title="Edit"><i class="fas fa-edit"></i></button>`;
                 if(hasPerm('control_device') && isOnline) {
                     buttons += `
                         <button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100" title="Restart"><i class="fas fa-sync"></i></button>
@@ -338,17 +413,15 @@
                         <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100" title="Remote Screen"><i class="fas fa-eye"></i></button>
                     `;
                 }
-
-                if(hasPerm('delete_device')) {
-                    buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100" title="Delete"><i class="fas fa-trash"></i></button>`;
-                }
+                if(hasPerm('delete_device')) buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100" title="Delete"><i class="fas fa-trash"></i></button>`;
                 buttons += `</div>`;
-
-                const statusBadge = isOnline ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
 
                 const row = `
                     <tr class="hover:bg-gray-50 border-b border-gray-100">
-                        <td class="px-6 py-4 align-top">${statusBadge}</td>
+                        <td class="px-6 py-4 align-top">
+                            <div>${statusBadge}</div>
+                            <div class="mt-1">${connIcon}</div>
+                        </td>
                         <td class="px-6 py-4 align-top">
                             <div class="font-bold text-gray-800 text-sm">${d.friendlyName || d.hostname}</div>
                             <div class="text-xs text-gray-400 font-mono">${d.hostname}</div>
@@ -362,7 +435,36 @@
             });
         }
 
-        // --- SIDEBAR & FILTER ---
+        // ✅ ฟังก์ชัน Export Excel
+        function exportToExcel() {
+            if(globalDevices.length === 0) { alert("No data to export"); return; }
+            
+            // เตรียมข้อมูลให้สวยงามสำหรับ Excel
+            const dataToExport = globalDevices.map(d => ({
+                "Hostname": d.hostname,
+                "Friendly Name": d.friendlyName || "-",
+                "Group": d.group || "-",
+                "Location": d.location || "-",
+                "Status": d.status,
+                "Connection": d.connection_type || "-",
+                "IP Address": d.ip,
+                "MAC Address": d.mac_address,
+                "OS": d.os,
+                "CPU Model": d.cpu_model,
+                "RAM Total": d.ram_total,
+                "Disk Info": d.disk_info,
+                "Last User": d.last_update
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Devices");
+            
+            // Download File
+            XLSX.writeFile(wb, `IT_Monitor_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        // ... (ฟังก์ชันอื่นๆ: renderSidebarGroups, createSidebarBtn, filterGroup, openEdit, etc. เหมือนเดิม) ...
         function renderSidebarGroups() {
             const groupListDiv = document.getElementById('groupList');
             const groups = [...new Set(globalDevices.map(d => d.group || 'Unassigned'))].sort();
@@ -370,18 +472,15 @@
             if(groups.includes('Unassigned')) html += createSidebarBtn('Unassigned', 'Unassigned');
             groups.forEach(g => { if(g !== 'Unassigned') html += createSidebarBtn(g, g); });
             groupListDiv.innerHTML = html;
-            
             const btnId = currentGroupFilter === 'ALL' ? 'btn-ALL' : `btn-${currentGroupFilter.replace(/\s/g, '-')}`;
             const activeBtn = document.getElementById(btnId);
             if(activeBtn) activeBtn.classList.add('group-active');
         }
-
         function createSidebarBtn(label, value) {
             const count = globalDevices.filter(d => (d.group || 'Unassigned') === value).length;
             return `<button onclick="filterGroup('${value}')" id="btn-${value.replace(/\s/g, '-')}" class="w-full flex justify-between items-center px-4 py-2 rounded-md hover:bg-slate-800 transition text-left text-sm text-slate-400 hover:text-white mb-1">
                     <span><i class="fas fa-folder mr-2"></i> ${label}</span><span class="bg-slate-700 text-xs px-2 py-0.5 rounded-full text-slate-300">${count}</span></button>`;
         }
-
         function filterGroup(groupName) {
             currentGroupFilter = groupName;
             document.querySelectorAll('aside button').forEach(b => b.classList.remove('group-active'));
@@ -389,10 +488,12 @@
             const activeBtn = document.getElementById(btnId);
             if(activeBtn) activeBtn.classList.add('group-active');
             renderTable();
-            document.getElementById('headerTitle').innerText = groupName === 'ALL' ? 'All Devices Overview' : `Group: ${groupName}`;
         }
-
-        // --- ACTIONS (Devices) ---
+        function hasPerm(perm) {
+            if(!currentUser) return false;
+            if(currentUser.role === 'admin') return true;
+            return currentUser.permissions.includes(perm);
+        }
         function openEdit(hostname) {
             const d = globalDevices.find(x => x.hostname === hostname);
             document.getElementById('editHostname').value = hostname;
@@ -401,7 +502,6 @@
             document.getElementById('editLocation').value = d.location || '';
             document.getElementById('editModal').classList.remove('hidden');
         }
-
         async function saveDevice() {
             const body = {
                 hostname: document.getElementById('editHostname').value,
@@ -417,7 +517,6 @@
             document.getElementById('editModal').classList.add('hidden');
             fetchDevices();
         }
-
         async function sendCommand(hostname, cmd) {
             if(!confirm(`Confirm ${cmd} ${hostname}?`)) return;
             await fetch(`${API_URL}/devices/command`, { 
@@ -427,7 +526,6 @@
             });
             alert("Command Sent");
         }
-
         async function requestScreenshot(hostname) {
             currentViewingHost = hostname;
             document.getElementById('screenModal').classList.remove('hidden');
@@ -436,7 +534,6 @@
         }
         function closeScreenModal() { document.getElementById('screenModal').classList.add('hidden'); currentViewingHost = null; }
         function refreshScreen() { if(currentViewingHost) requestScreenshot(currentViewingHost); }
-
         async function deleteDevice(hostname) {
             if(!confirm(`Delete ${hostname}?`)) return;
             await fetch(`${API_URL}/devices/${hostname}`, { 
@@ -445,34 +542,22 @@
             });
             fetchDevices();
         }
-
         function openDetails(hostname) {
             const d = globalDevices.find(x => x.hostname === hostname);
-            
             document.getElementById('det-friendlyName').innerText = d.friendlyName || "Unknown Device";
             document.getElementById('det-hostname').innerText = d.hostname;
             document.getElementById('det-cpu').innerText = d.cpu_model || d.cpu || "Unknown";
-            
-            // ✅ RAM TYPE
             let ramText = d.ram_total || d.ram || "Unknown";
-            if (d.ram_type && d.ram_type !== "Unknown") {
-                ramText = `${d.ram_type} | ${ramText}`;
-            }
+            if (d.ram_type && d.ram_type !== "Unknown") ramText = `${d.ram_type} | ${ramText}`;
             document.getElementById('det-ram').innerText = ramText;
-            
             document.getElementById('det-gpu').innerText = d.gpu || "Unknown";
             document.getElementById('det-storage').innerText = d.storage_model || "Unknown";
             document.getElementById('det-os').innerText = d.os || "Unknown";
             document.getElementById('det-serial').innerText = d.serial_number || "Unknown";
-            
-            // ✅ Network Info
             document.getElementById('det-ip').innerText = d.ip || "Unknown";
             document.getElementById('det-mac').innerText = d.mac_address || "Unknown";
-            
             document.getElementById('detailsModal').classList.remove('hidden');
         }
-
-        // --- USER MANAGEMENT (ADMIN ONLY) ---
         async function fetchUsers() {
             const res = await fetch(`${API_URL}/users`, { headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} });
             if(res.ok) {
@@ -495,7 +580,6 @@
                 });
             }
         }
-
         function openUserModal(id = null) {
             const modal = document.getElementById('userModal');
             modal.classList.remove('hidden');
@@ -519,14 +603,12 @@
             }
             togglePermissions();
         }
-
         function togglePermissions() {
             const role = document.getElementById('formRole').value;
             const permSec = document.getElementById('permSection');
             if(role === 'admin') permSec.classList.add('opacity-50', 'pointer-events-none');
             else permSec.classList.remove('opacity-50', 'pointer-events-none');
         }
-
         async function saveUser() {
             const id = document.getElementById('userId').value;
             const body = {
@@ -545,29 +627,11 @@
             document.getElementById('userModal').classList.add('hidden');
             fetchUsers();
         }
-
         async function deleteUser(id) {
             if(!confirm("Delete this user?")) return;
             await fetch(`${API_URL}/users/${id}`, { method: 'DELETE', headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} });
             fetchUsers();
         }
-// ✅ เพิ่มส่วนนี้เข้าไปครับ: ให้กด Enter แล้ว Login ได้เลย
-        document.getElementById('username').addEventListener("keyup", function(event) {
-            if (event.key === "Enter") {
-                // ถ้ากด Enter ที่ช่องชื่อ -> ให้เด้งไปช่องรหัสผ่าน
-                document.getElementById("password").focus();
-            }
-        });
-
-        document.getElementById('password').addEventListener("keyup", function(event) {
-            if (event.key === "Enter") {
-                // ถ้ากด Enter ที่ช่องรหัสผ่าน -> ให้กดปุ่ม Login ทันที
-                login();
-            }
-        });
-
-
-        initSystem();
     </script>
 </body>
 </html>

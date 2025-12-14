@@ -21,19 +21,8 @@ mongoose.connect(process.env.MONGODB_URI)
     })
     .catch(err => console.error('❌ DB Error:', err));
 
-// --- SCHEMAS ---
+// ... (ส่วน import) ...
 
-// 1. User Schema (ระบบสมาชิก)
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: 'staff' }, // 'admin' or 'staff'
-    // กำหนดสิทธิ์ละเอียด: manage_users, delete_device, control_device, edit_device
-    permissions: [String] 
-});
-const User = mongoose.model('User', userSchema);
-
-// 2. Device Schema (เหมือนเดิม เพิ่ม mac/ram_type/temp)
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
@@ -42,6 +31,9 @@ const deviceSchema = new mongoose.Schema({
     ip: String,
     public_ip: String,
     mac_address: String,
+    
+    connection_type: String, // ✅ เพิ่มบรรทัดนี้ครับ (internet / local)
+
     location_city: String,
     isp: String,
     lat: Number,
@@ -63,6 +55,8 @@ const deviceSchema = new mongoose.Schema({
     screenshot: String,
     isAlerted: { type: Boolean, default: false }
 });
+
+// ... (ส่วนที่เหลือเหมือนเดิม) ...
 const Device = mongoose.model('Device', deviceSchema);
 
 // --- INITIALIZATION ---
