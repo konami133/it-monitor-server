@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IT Enterprise Monitor (Fixed)</title>
+    <title>IT Enterprise Monitor (Complete)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -29,6 +29,7 @@
     </div>
 
     <div id="dashboardContent" class="hidden w-full h-full flex relative">
+        
         <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden glass"></div>
 
         <aside id="sidebar" class="sidebar-transition absolute md:relative z-30 w-64 h-full bg-slate-900 text-slate-300 flex flex-col shadow-xl flex-shrink-0 transform -translate-x-full md:translate-x-0">
@@ -36,6 +37,7 @@
                 <span>IT MONITOR</span>
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
+            
             <div class="p-4 space-y-1">
                 <button onclick="switchView('dashboard'); toggleSidebar()" class="w-full text-left px-4 py-3 hover:bg-slate-800 rounded group-active" id="menu-dash">
                     <i class="fas fa-desktop mr-3"></i> Dashboard
@@ -44,6 +46,7 @@
                     <i class="fas fa-users-cog mr-3"></i> Users
                 </button>
             </div>
+
             <div class="flex-1 overflow-y-auto p-4 border-t border-slate-800 mt-2">
                 <p class="text-xs uppercase text-slate-500 font-bold mb-2">Device Groups</p>
                 <button onclick="filterGroup('ALL'); toggleSidebar()" id="btn-ALL" class="w-full text-left px-4 py-2 hover:bg-slate-800 rounded text-sm mb-1">All Devices</button>
@@ -61,38 +64,52 @@
                     <button onclick="toggleSidebar()" class="md:hidden text-gray-600 text-xl p-2"><i class="fas fa-bars"></i></button>
                     <h2 class="text-lg font-semibold text-gray-700 truncate max-w-[120px] md:max-w-none" id="headerTitle">Dashboard</h2>
                 </div>
+                
                 <div class="flex items-center gap-2 md:gap-4">
                     <div class="relative hidden sm:block">
                         <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Search..." class="pl-9 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500 w-40 md:w-64 transition-all">
                         <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
                     </div>
                     <button onclick="document.getElementById('searchInputMobile').classList.toggle('hidden')" class="sm:hidden text-gray-500 p-2"><i class="fas fa-search"></i></button>
+                    
                     <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow flex-shrink-0">ON</div>
-                    <button onclick="logout()" class="md:hidden text-red-500 p-2 border border-red-200 rounded ml-1 bg-red-50" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+                    
+                    <button onclick="logout()" class="md:hidden text-red-500 p-2 border border-red-200 rounded ml-1 bg-red-50" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
             </header>
+            
             <div id="searchInputMobile" class="hidden bg-gray-50 p-2 border-b sm:hidden">
-                <input type="text" onkeyup="document.getElementById('searchInput').value=this.value; renderTable()" placeholder="Search..." class="w-full p-2 border rounded text-sm">
+                <input type="text" onkeyup="document.getElementById('searchInput').value=this.value; renderTable()" placeholder="Search hostname, ip..." class="w-full p-2 border rounded text-sm">
             </div>
 
             <main id="view-dashboard" class="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <div onclick="filterStatus('ALL')" id="card-ALL" class="bg-white p-4 md:p-5 rounded border-l-4 border-blue-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition card-active flex justify-between items-center sm:block">
-                        <div class="text-gray-500 text-sm font-bold uppercase">Total</div><div class="text-2xl md:text-3xl font-bold text-gray-800" id="totalCount">0</div>
+                        <div class="text-gray-500 text-sm font-bold uppercase">Total</div>
+                        <div class="text-2xl md:text-3xl font-bold text-gray-800" id="totalCount">0</div>
                     </div>
                     <div onclick="filterStatus('online')" id="card-online" class="bg-white p-4 md:p-5 rounded border-l-4 border-green-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition flex justify-between items-center sm:block">
-                        <div class="text-green-600 text-sm font-bold uppercase">Online</div><div class="text-2xl md:text-3xl font-bold text-green-700" id="onlineCount">0</div>
+                        <div class="text-green-600 text-sm font-bold uppercase">Online</div>
+                        <div class="text-2xl md:text-3xl font-bold text-green-700" id="onlineCount">0</div>
                     </div>
                     <div onclick="filterStatus('offline')" id="card-offline" class="bg-white p-4 md:p-5 rounded border-l-4 border-red-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition flex justify-between items-center sm:block">
-                        <div class="text-red-500 text-sm font-bold uppercase">Offline</div><div class="text-2xl md:text-3xl font-bold text-red-600" id="offlineCount">0</div>
+                        <div class="text-red-500 text-sm font-bold uppercase">Offline</div>
+                        <div class="text-2xl md:text-3xl font-bold text-red-600" id="offlineCount">0</div>
                     </div>
                 </div>
+
                 <div class="bg-white rounded shadow flex flex-col h-auto">
                     <div class="px-4 py-3 md:px-6 md:py-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-gray-50">
                         <h3 class="font-bold text-gray-700 text-sm md:text-base">Device List <span id="filterLabel" class="text-xs font-normal text-gray-500">(All)</span></h3>
                         <div class="flex gap-2 w-full sm:w-auto">
-                            <button onclick="exportToExcel()" class="flex-1 sm:flex-none text-green-600 hover:text-green-800 text-xs md:text-sm font-bold border border-green-600 px-3 py-1.5 rounded hover:bg-green-50 transition text-center justify-center flex items-center"><i class="fas fa-file-excel mr-1"></i> Export</button>
-                            <button onclick="fetchDevices()" class="flex-1 sm:flex-none text-blue-500 hover:text-blue-700 text-xs md:text-sm font-medium border border-blue-500 px-3 py-1.5 rounded hover:bg-blue-50 text-center justify-center flex items-center"><i class="fas fa-sync-alt mr-1"></i> Refresh</button>
+                            <button onclick="exportToExcel()" class="flex-1 sm:flex-none text-green-600 hover:text-green-800 text-xs md:text-sm font-bold border border-green-600 px-3 py-1.5 rounded hover:bg-green-50 transition text-center justify-center flex items-center">
+                                <i class="fas fa-file-excel mr-1"></i> Export
+                            </button>
+                            <button onclick="fetchDevices()" class="flex-1 sm:flex-none text-blue-500 hover:text-blue-700 text-xs md:text-sm font-medium border border-blue-500 px-3 py-1.5 rounded hover:bg-blue-50 text-center justify-center flex items-center">
+                                <i class="fas fa-sync-alt mr-1"></i> Refresh
+                            </button>
                         </div>
                     </div>
                     <div class="overflow-x-auto flex-1">
@@ -423,7 +440,23 @@
         function openDetails(h) { const d=globalDevices.find(x=>x.hostname===h); document.getElementById('det-hostname').innerText=h; document.getElementById('det-cpu').innerText=d.cpu_model; document.getElementById('det-ram').innerText=d.ram_total; document.getElementById('det-ip').innerText=d.ip; document.getElementById('detailsModal').classList.remove('hidden'); }
         
         // ✅ USER MANAGEMENT FIXED
-        async function fetchUsers() { const r=await fetch(`${API_URL}/users`,{headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); if(r.ok) { globalUsers=await r.json(); document.getElementById('userTable').innerHTML=globalUsers.map(u=>`<tr class="border-b"><td class="px-6 py-4 font-bold">${u.username}</td><td class="px-6 py-4">${u.role}</td><td class="px-6 py-4 text-xs">${u.role==='admin'?'ALL':(u.permissions||[]).join(', ')}</td><td class="px-6 py-4 text-center"><button onclick="openUserModal('${u._id}')" class="text-blue-500 mr-2"><i class="fas fa-edit"></i></button>${u.username!=='admin'?`<button onclick="deleteUser('${u._id}')" class="text-red-500"><i class="fas fa-trash"></i></button>`:''}</td></tr>`).join(''); } }
+        async function fetchUsers() {
+            const r = await fetch(`${API_URL}/users`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+            if (r.ok) {
+                globalUsers = await r.json();
+                document.getElementById('userTable').innerHTML = globalUsers.map(u => `
+                    <tr class="border-b">
+                        <td class="px-6 py-4 font-bold">${u.username}</td>
+                        <td class="px-6 py-4">${u.role}</td>
+                        <td class="px-6 py-4 text-xs">${u.role === 'admin' ? 'ALL' : (u.permissions || []).join(', ')}</td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="openUserModal('${u._id}')" class="text-blue-500 mr-3 hover:text-blue-700" title="Edit"><i class="fas fa-edit"></i></button>
+                            ${u.username !== 'admin' ? `<button onclick="deleteUser('${u._id}')" class="text-red-500 hover:text-red-700" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
         
         function openUserModal(id = null) {
             const modal = document.getElementById('userModal'); modal.classList.remove('hidden');
@@ -455,7 +488,7 @@
             const id = document.getElementById('userId').value;
             const body = { username: document.getElementById('formUser').value, password: document.getElementById('formPass').value, role: document.getElementById('formRole').value, permissions: Array.from(document.querySelectorAll('.perm-chk:checked')).map(c => c.value) };
             const method = id ? 'PUT' : 'POST'; const url = id ? `${API_URL}/users/${id}` : `${API_URL}/users`;
-            await fetch(url, { method: method, headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`}, body: JSON.stringify(body) });
+            await fetch(url, { method: method, headers: {'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`}, body: JSON.stringify(body) });
             document.getElementById('userModal').classList.add('hidden'); fetchUsers();
         }
         async function deleteUser(id) { if(confirm("Delete?")) { await fetch(`${API_URL}/users/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); fetchUsers(); } }
