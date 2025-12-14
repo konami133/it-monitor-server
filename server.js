@@ -30,15 +30,17 @@ const deviceSchema = new mongoose.Schema({
     location: String,
     ip: String,
     public_ip: String,
-    
-    // ✅ เพิ่มตรงนี้ครับ
     mac_address: String,
-
     location_city: String,
     isp: String,
     lat: Number,
     lon: Number,
     os: String,
+    
+    // ✅ เพิ่ม 2 ฟิลด์นี้
+    cpu_temp: Number,  // เก็บอุณหภูมิ (องศา C)
+    ram_type: String,  // เก็บชนิด RAM (DDR4)
+    
     cpu: String,       
     ram: String,       
     cpu_model: String, 

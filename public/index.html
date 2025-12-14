@@ -87,7 +87,7 @@
                 </div>
                 <div class="space-y-4 bg-gray-50 p-6 rounded-lg border border-gray-200 text-sm">
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Processor</span><span class="col-span-2 font-medium text-gray-800" id="det-cpu">-</span></div>
-                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">RAM Total</span><span class="col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">RAM (Type | Total)</span><span class="col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">GPU</span><span class="col-span-2 font-medium text-gray-800" id="det-gpu">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Storage Model</span><span class="col-span-2 font-medium text-gray-800" id="det-storage">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
@@ -121,6 +121,7 @@
     </div>
 
     <script>
+        // ⚠️⚠️ แก้ URL ตรงนี้เหมือนเดิมครับ ⚠️⚠️
         const API_URL = "https://it-monitor-server.onrender.com/api"; 
 
         let globalDevices = [];
@@ -155,7 +156,7 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- RENDER TABLE ---
+        // --- RENDER TABLE (หัวใจหลักของการแสดงผล) ---
         function renderTable() {
             const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
             let displayDevices = globalDevices;
@@ -170,26 +171,34 @@
                 const statusBadge = isOnline ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
                 const mapLink = (d.lat && d.lon) ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 block"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
 
-                // ✅ 1. ตรวจสอบ HDD < 20GB
-                let hddStyle = "text-blue-600";
-                let hddText = d.disk_info ? d.disk_info.split('|')[0] : '-';
-                
-                // ดึงตัวเลขพื้นที่ว่างออกมาเช็ค (Regex หาคำว่า Free XGB)
-                const freeSpaceMatch = hddText.match(/Free\s+([0-9.]+)\s*GB/i);
-                if (freeSpaceMatch && parseFloat(freeSpaceMatch[1]) < 20) {
-                    hddStyle = "text-red-600 font-bold animate-pulse"; // สีแดง + กระพริบ
-                    hddText = "⚠️ " + hddText; // เพิ่มไอคอนเตือน
+                // 🔥 Logic 1: เช็คความร้อน CPU (> 80°C Alert)
+                let tempDisplay = '';
+                if (d.cpu_temp) {
+                    if (d.cpu_temp >= 80) {
+                        tempDisplay = `<span class="text-red-600 font-bold animate-pulse ml-1" title="High Temperature!"><i class="fas fa-fire"></i> ${d.cpu_temp}°C</span>`;
+                    } else {
+                        tempDisplay = `<span class="text-green-600 ml-1 text-[10px]"><i class="fas fa-thermometer-half"></i> ${d.cpu_temp}°C</span>`;
+                    }
                 }
 
-                // ✅ 2. แสดง IP และ MAC Address
+                // ⚠️ Logic 2: เช็คพื้นที่ HDD (< 20GB Alert)
+                let hddStyle = "text-blue-600";
+                let hddText = d.disk_info ? d.disk_info.split('|')[0] : '-';
+                const freeSpaceMatch = hddText.match(/Free\s+([0-9.]+)\s*GB/i);
+                if (freeSpaceMatch && parseFloat(freeSpaceMatch[1]) < 20) {
+                    hddStyle = "text-red-600 font-bold animate-pulse";
+                    hddText = "⚠️ " + hddText;
+                }
+
+                // สร้าง HTML แสดงผล System Info
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
                         <div class="mb-1" title="Network Info">
                             <div class="text-indigo-600 font-mono font-bold"><i class="fas fa-network-wired w-3"></i> ${d.ip || '-'}</div>
-                            <div class="text-gray-400 font-mono text-[10px] pl-4">${d.mac_address || ''}</div>
+                            <div class="text-gray-400 font-mono text-[10px] pl-4"><i class="fas fa-fingerprint w-3"></i> ${d.mac_address || '-'}</div>
                         </div>
                         <div>
-                            <span class="font-bold text-gray-600"><i class="fas fa-microchip w-3"></i> CPU:</span> ${d.cpu || '0%'} 
+                            <span class="font-bold text-gray-600"><i class="fas fa-microchip w-3"></i> CPU:</span> ${d.cpu || '0%'} ${tempDisplay}
                             <span class="mx-1 text-gray-300">|</span> 
                             <span class="font-bold text-gray-600">RAM:</span> ${d.ram || '0%'}
                         </div>
@@ -237,6 +246,7 @@
             });
         }
 
+        // --- SIDEBAR & FILTER ---
         function renderSidebarGroups() {
             const groupListDiv = document.getElementById('groupList');
             const groups = [...new Set(globalDevices.map(d => d.group || 'Unassigned'))].sort();
@@ -266,20 +276,28 @@
             document.getElementById('headerTitle').innerText = groupName === 'ALL' ? 'All Devices Overview' : `Group: ${groupName}`;
         }
 
+        // --- ACTIONS ---
         function openDetails(hostname) {
             const d = globalDevices.find(dev => dev.hostname === hostname); if(!d) return;
             document.getElementById('det-friendlyName').innerText = d.friendlyName || "Unknown Device";
             document.getElementById('det-hostname').innerText = d.hostname;
             
             document.getElementById('det-cpu').innerText = d.cpu_model || d.cpu || "Unknown";
-            document.getElementById('det-ram').innerText = d.ram_total || d.ram || "Unknown";
+            
+            // 💾 RAM Type Display (DDR3L | 16 GB)
+            let ramText = d.ram_total || d.ram || "Unknown";
+            if (d.ram_type && d.ram_type !== "Unknown") {
+                ramText = `${d.ram_type} | ${ramText}`;
+            }
+            document.getElementById('det-ram').innerText = ramText;
+            
             document.getElementById('det-gpu').innerText = d.gpu || "Unknown";
             document.getElementById('det-storage').innerText = d.storage_model || "Unknown";
             document.getElementById('det-os').innerText = d.os || "Unknown";
             document.getElementById('det-serial').innerText = d.serial_number || "Unknown";
-            document.getElementById('det-ip').innerText = d.ip || "Unknown";
             
-            // ✅ แสดง MAC Address ในหน้า Details
+            // 🌐 Network Info
+            document.getElementById('det-ip').innerText = d.ip || "Unknown";
             document.getElementById('det-mac').innerText = d.mac_address || "Unknown";
 
             document.getElementById('detailsModal').classList.remove('hidden');
