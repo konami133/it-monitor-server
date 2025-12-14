@@ -8,6 +8,9 @@ const mongoose = require('mongoose');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// 🔒 รหัสลับของคุณ (ตรงกับ Agent)
+const AGENT_SECRET_KEY = "BCGE2643AMySuperSecretKey2025";
+
 // ปลดล็อคให้รับรูปภาพขนาดใหญ่ได้ (50MB)
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
@@ -19,7 +22,7 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('✅ MongoDB Connected'))
     .catch(err => console.error('❌ DB Error:', err));
 
-// โครงสร้างข้อมูล (Schema) รวมทุกฟิลด์ที่ทำมา
+// โครงสร้างข้อมูล (Schema)
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
@@ -75,7 +78,6 @@ const authenticateJWT = (req, res, next) => {
 // 1. Login
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    // User Hardcode (เปลี่ยนได้)
     if (username === "admin" && password === "password123") {
         const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: '12h' });
         res.json({ token });
@@ -84,11 +86,12 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-// 2. รับรายงานจาก Agent (มีระบบกันบอท)
+// 2. รับรายงานจาก Agent (เช็ครหัสลับแล้ว)
 app.post('/api/report', async (req, res) => {
-    // 🔒 ตรวจรหัสลับจาก Agent (ต้องตรงกับใน agent.py)
+    // 🔒 ตรวจรหัสลับจาก Agent
     const clientKey = req.headers['x-agent-secret'];
-    if (clientKey !== "BCGE2643AMySuperSecretKey2025") {
+    if (clientKey !== AGENT_SECRET_KEY) {
+        console.log(`🚫 Blocked unauthorized access from: ${req.ip}`);
         return res.status(403).json({ error: "Unauthorized" });
     }
 
@@ -100,11 +103,9 @@ app.post('/api/report', async (req, res) => {
             { upsert: true, new: true }
         );
 
-        // ส่งคำสั่งกลับไปหา Agent (ถ้ามี)
         let responsePayload = { message: 'received' };
         if (device.pendingCommand) {
             responsePayload.command = device.pendingCommand;
-            // ถ้าไม่ใช่ Screenshot ให้ลบคำสั่งทิ้งเลย (Screenshot รอรูปมาก่อนค่อยลบ)
             if(device.pendingCommand !== 'screenshot') {
                 await Device.updateOne({ hostname: data.hostname }, { $unset: { pendingCommand: "" } });
             }
@@ -139,7 +140,6 @@ app.get('/api/devices', authenticateJWT, async (req, res) => {
         const deviceList = devices.map(d => {
             const dev = d.toObject();
             const diff = (now - new Date(dev.last_seen)) / 1000;
-            // ถ้าหายไปเกิน 60 วินาที ถือว่า Offline
             dev.status = diff > 60 ? 'offline' : 'online';
             return dev;
         });
@@ -156,14 +156,14 @@ app.post('/api/devices/update', authenticateJWT, async (req, res) => {
     res.json({ success: true });
 });
 
-// 6. สั่ง Command (Restart/Shutdown)
+// 6. สั่ง Command
 app.post('/api/devices/command', authenticateJWT, async (req, res) => {
     const { hostname, command } = req.body;
     await Device.updateOne({ hostname }, { pendingCommand: command });
     res.json({ success: true });
 });
 
-// 7. ลบเครื่อง (Delete)
+// 7. ลบเครื่อง
 app.delete('/api/devices/:hostname', authenticateJWT, async (req, res) => {
     const { hostname } = req.params;
     try {
