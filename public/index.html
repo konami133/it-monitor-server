@@ -59,7 +59,8 @@
                                     <th class="px-6 py-3">Status</th>
                                     <th class="px-6 py-3">Device Name</th>
                                     <th class="px-6 py-3">Group / Location</th>
-                                    <th class="px-6 py-3">System Info / IP</th> <th class="px-6 py-3 text-center">Actions</th>
+                                    <th class="px-6 py-3">System Info / IP / MAC</th>
+                                    <th class="px-6 py-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="deviceTable" class="bg-white divide-y divide-gray-100"></tbody>
@@ -91,6 +92,8 @@
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">Storage Model</span><span class="col-span-2 font-medium text-gray-800" id="det-storage">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
                     <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">IP Address</span><span class="col-span-2 font-mono font-medium text-indigo-600" id="det-ip">-</span></div>
+                    <div class="grid grid-cols-3 border-b border-gray-200 pb-2"><span class="text-gray-500">MAC Address</span><span class="col-span-2 font-mono font-medium text-gray-600" id="det-mac">-</span></div>
+                    
                     <div class="grid grid-cols-3 pt-1"><span class="text-gray-500 font-bold">S/N</span><span class="col-span-2 font-mono font-bold text-gray-800 tracking-wider" id="det-serial">-</span></div>
                 </div>
                 <div class="mt-6 flex justify-end"><button class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition" onclick="copySerial()">Copy S/N</button></div>
@@ -118,7 +121,6 @@
     </div>
 
     <script>
-        // ⚠️⚠️ แก้ URL ตรงนี้ที่เดียวครับ ⚠️⚠️
         const API_URL = "https://it-monitor-server.onrender.com/api"; 
 
         let globalDevices = [];
@@ -168,19 +170,31 @@
                 const statusBadge = isOnline ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
                 const mapLink = (d.lat && d.lon) ? `<a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs font-bold mt-1 block"><i class="fas fa-map-marker-alt"></i> Map</a>` : '';
 
-                // ✅ เพิ่ม IP Address ไว้บรรทัดบนสุด
+                // ✅ 1. ตรวจสอบ HDD < 20GB
+                let hddStyle = "text-blue-600";
+                let hddText = d.disk_info ? d.disk_info.split('|')[0] : '-';
+                
+                // ดึงตัวเลขพื้นที่ว่างออกมาเช็ค (Regex หาคำว่า Free XGB)
+                const freeSpaceMatch = hddText.match(/Free\s+([0-9.]+)\s*GB/i);
+                if (freeSpaceMatch && parseFloat(freeSpaceMatch[1]) < 20) {
+                    hddStyle = "text-red-600 font-bold animate-pulse"; // สีแดง + กระพริบ
+                    hddText = "⚠️ " + hddText; // เพิ่มไอคอนเตือน
+                }
+
+                // ✅ 2. แสดง IP และ MAC Address
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
-                        <div class="text-indigo-600 font-mono font-bold mb-1" title="Local IP Address">
-                            <i class="fas fa-network-wired w-3"></i> ${d.ip || '-'}
+                        <div class="mb-1" title="Network Info">
+                            <div class="text-indigo-600 font-mono font-bold"><i class="fas fa-network-wired w-3"></i> ${d.ip || '-'}</div>
+                            <div class="text-gray-400 font-mono text-[10px] pl-4">${d.mac_address || ''}</div>
                         </div>
                         <div>
                             <span class="font-bold text-gray-600"><i class="fas fa-microchip w-3"></i> CPU:</span> ${d.cpu || '0%'} 
                             <span class="mx-1 text-gray-300">|</span> 
                             <span class="font-bold text-gray-600">RAM:</span> ${d.ram || '0%'}
                         </div>
-                        <div class="text-blue-600 truncate max-w-[200px]" title="${d.disk_info || ''}">
-                            <i class="fas fa-hdd w-3"></i> ${d.disk_info ? d.disk_info.split('|')[0] : '-'}
+                        <div class="${hddStyle} truncate max-w-[200px]" title="${d.disk_info || ''}">
+                            <i class="fas fa-hdd w-3"></i> ${hddText}
                         </div>
                         <div class="${d.last_update === 'Check Failed' ? 'text-red-500' : 'text-green-600'}">
                             <i class="fab fa-windows w-3"></i> Update: ${d.last_update || '-'}
@@ -263,7 +277,10 @@
             document.getElementById('det-storage').innerText = d.storage_model || "Unknown";
             document.getElementById('det-os').innerText = d.os || "Unknown";
             document.getElementById('det-serial').innerText = d.serial_number || "Unknown";
-            document.getElementById('det-ip').innerText = d.ip || "Unknown"; // ✅ เพิ่มแสดง IP ในหน้า Detail ด้วย
+            document.getElementById('det-ip').innerText = d.ip || "Unknown";
+            
+            // ✅ แสดง MAC Address ในหน้า Details
+            document.getElementById('det-mac').innerText = d.mac_address || "Unknown";
 
             document.getElementById('detailsModal').classList.remove('hidden');
         }

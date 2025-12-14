@@ -28,28 +28,26 @@ const deviceSchema = new mongoose.Schema({
     friendlyName: String,
     group: String,
     location: String,
-    
-    // ข้อมูล Network & OS
     ip: String,
     public_ip: String,
+    
+    // ✅ เพิ่มตรงนี้ครับ
+    mac_address: String,
+
     location_city: String,
     isp: String,
     lat: Number,
     lon: Number,
     os: String,
-    
-    // ข้อมูล Spec & Usage
-    cpu: String,        // Usage %
-    ram: String,        // Usage %
-    cpu_model: String,  // ชื่อรุ่น CPU
-    ram_total: String,  // ขนาด RAM รวม
+    cpu: String,       
+    ram: String,       
+    cpu_model: String, 
+    ram_total: String, 
     disk_info: String,
     last_update: String,
     serial_number: String,
     gpu: String,
     storage_model: String,
-    
-    // ระบบ
     last_seen: { type: Date, default: Date.now },
     pendingCommand: String,
     screenshot: String,
