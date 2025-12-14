@@ -84,13 +84,26 @@ app.post('/api/login', (req, res) => {
 
 // API: รับรายงานสถานะจาก Agent
 app.post('/api/report', async (req, res) => {
+    // 🔒 กำหนดรหัสลับ (ตั้งให้ยากๆ)
+const AGENT_SECRET_KEY = "BCGE2643AMySuperSecretKey2025"; 
+
+app.post('/api/report', async (req, res) => {
+    // 🛡️ ตรวจกุญแจก่อน!
+    const clientKey = req.headers['x-agent-secret'];
+    if (clientKey !== AGENT_SECRET_KEY) {
+        console.log(`🚫 Blocked unauthorized access from: ${req.ip}`);
+        return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    // (ข้างล่างนี้คือโค้ดเดิม ทำงานต่อได้เลย)
     const data = req.body;
     try {
         const device = await Device.findOneAndUpdate(
             { hostname: data.hostname },
-            { ...data, last_seen: new Date() },
+            { ...data, last_seen: new Date(), isAlerted: false }, 
             { upsert: true, new: true }
         );
+        // ... (โค้ดเดิม) ...
 
         // เช็คว่ามีคำสั่งค้างไหม?
         let responsePayload = { message: 'received' };
