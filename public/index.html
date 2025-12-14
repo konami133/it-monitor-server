@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IT Enterprise Monitor (Final)</title>
+    <title>IT Enterprise Monitor (Pro UI)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -12,7 +12,6 @@
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .group-active { background-color: #2563eb; color: white; }
         .card-active { border-color: #2563eb; background-color: #eff6ff; }
-        /* Smooth Sidebar Transition */
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
 </head>
@@ -113,7 +112,7 @@
                                     <th class="px-4 py-3 md:px-6">Status / Type</th>
                                     <th class="px-4 py-3 md:px-6">Device Name</th>
                                     <th class="px-4 py-3 md:px-6">Info</th>
-                                    <th class="px-4 py-3 md:px-6">Hardware</th>
+                                    <th class="px-4 py-3 md:px-6">Hardware Status</th>
                                     <th class="px-4 py-3 md:px-6 text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -241,19 +240,17 @@
         let currentStatusFilter = 'ALL';
         let currentViewingHost = null;
 
-        // ✅ AUTO LOGOUT CONFIG
+        // ✅ AUTO LOGOUT
         let logoutTimer;
-        const AUTO_LOGOUT_TIME = 30 * 60 * 1000; // 30 นาที
+        const AUTO_LOGOUT_TIME = 30 * 60 * 1000; 
 
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
             if(sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
+                sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden');
             } else {
-                sidebar.classList.add('-translate-x-full'); 
-                overlay.classList.add('hidden');
+                sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden');
             }
         }
 
@@ -261,11 +258,7 @@
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
             try {
-                const res = await fetch(`${API_URL}/login`, { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({username:u, password:p}) 
-                });
+                const res = await fetch(`${API_URL}/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username:u, password:p}) });
                 if(res.ok) {
                     const data = await res.json();
                     localStorage.setItem('token', data.token);
@@ -278,11 +271,7 @@
         document.getElementById('username').addEventListener("keyup", function(e) { if(e.key==="Enter") document.getElementById("password").focus(); });
         document.getElementById('password').addEventListener("keyup", function(e) { if(e.key==="Enter") login(); });
 
-        function logout() { 
-            clearTimeout(logoutTimer);
-            localStorage.clear(); 
-            location.reload(); 
-        }
+        function logout() { clearTimeout(logoutTimer); localStorage.clear(); location.reload(); }
 
         function initSystem() {
             const token = localStorage.getItem('token');
@@ -297,26 +286,21 @@
                     document.getElementById('menu-users').classList.remove('hidden');
                 }
                 
-                startAutoLogout(); // ✅ เริ่มจับเวลา
+                startAutoLogout();
                 fetchDevices();
                 setInterval(fetchDevices, 5000);
             }
         }
 
-        // ✅ AUTO LOGOUT LOGIC
         function startAutoLogout() {
             const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
             events.forEach(evt => document.addEventListener(evt, resetLogoutTimer));
             resetLogoutTimer();
         }
-
         function resetLogoutTimer() {
             clearTimeout(logoutTimer);
             if (localStorage.getItem('token')) {
-                logoutTimer = setTimeout(() => {
-                    alert("Session timed out due to inactivity (30 mins).");
-                    logout();
-                }, AUTO_LOGOUT_TIME);
+                logoutTimer = setTimeout(() => { alert("Session timed out."); logout(); }, AUTO_LOGOUT_TIME);
             }
         }
 
@@ -397,8 +381,8 @@
 
                 let tempDisplay = '';
                 if (d.cpu_temp) {
-                    if (d.cpu_temp >= 80) tempDisplay = `<span class="text-red-600 font-bold animate-pulse block md:inline" title="High Temperature!"><i class="fas fa-fire"></i> ${d.cpu_temp}°C</span>`;
-                    else tempDisplay = `<span class="text-green-600 block md:inline text-[10px]"><i class="fas fa-thermometer-half"></i> ${d.cpu_temp}°C</span>`;
+                    if (d.cpu_temp >= 80) tempDisplay = `<span class="text-red-600 font-bold animate-pulse block md:inline ml-1" title="High Temperature!"><i class="fas fa-fire"></i> ${d.cpu_temp}°C</span>`;
+                    else tempDisplay = `<span class="text-green-600 block md:inline text-[10px] ml-1"><i class="fas fa-thermometer-half"></i> ${d.cpu_temp}°C</span>`;
                 }
 
                 let hddStyle = "text-blue-600";
@@ -409,14 +393,28 @@
                     hddText = "⚠️ " + hddText;
                 }
 
+                // ✅ UPDATED SYSINFO (PRO LOOK with ICONS & RAM)
                 const sysInfo = `
                     <div class="text-xs text-gray-700 space-y-1">
-                        <div class="mb-1" title="Network">
-                            <div class="text-indigo-600 font-mono font-bold truncate max-w-[120px] md:max-w-none">${d.ip || '-'}</div>
-                            <div class="text-gray-400 font-mono text-[10px] hidden md:block pl-2">${d.mac_address || ''}</div>
+                        <div class="mb-1 flex items-center" title="Network Info">
+                            <i class="fas fa-network-wired text-indigo-500 w-4"></i>
+                            <span class="text-indigo-700 font-mono font-bold mr-2 truncate max-w-[120px] md:max-w-none">${d.ip || '-'}</span>
+                            <span class="text-gray-400 font-mono text-[10px] hidden md:inline"><i class="fas fa-fingerprint w-3"></i> ${d.mac_address || ''}</span>
                         </div>
-                        <div><span class="font-bold text-gray-600">CPU:</span> ${d.cpu || '0%'} ${tempDisplay}</div>
-                        <div class="${hddStyle} truncate max-w-[150px] md:max-w-[200px]" title="${d.disk_info || ''}">${hddText}</div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <div class="flex items-center" title="CPU Usage">
+                                <i class="fas fa-microchip text-gray-500 w-4"></i>
+                                <span class="font-bold text-gray-600">CPU:</span> ${d.cpu || '0%'} ${tempDisplay}
+                            </div>
+                            <span class="text-gray-300 hidden md:inline">|</span>
+                            <div class="flex items-center" title="RAM Usage">
+                                <i class="fas fa-memory text-gray-500 w-4"></i>
+                                <span class="font-bold text-gray-600">RAM:</span> ${d.ram || '0%'}
+                            </div>
+                        </div>
+                        <div class="${hddStyle} truncate max-w-[200px] flex items-center" title="${d.disk_info || ''}">
+                             <i class="fas fa-hdd w-4"></i> ${hddText}
+                        </div>
                     </div>
                 `;
 
