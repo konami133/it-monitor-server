@@ -551,6 +551,21 @@
             await fetch(`${API_URL}/users/${id}`, { method: 'DELETE', headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`} });
             fetchUsers();
         }
+// ✅ เพิ่มส่วนนี้เข้าไปครับ: ให้กด Enter แล้ว Login ได้เลย
+        document.getElementById('username').addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                // ถ้ากด Enter ที่ช่องชื่อ -> ให้เด้งไปช่องรหัสผ่าน
+                document.getElementById("password").focus();
+            }
+        });
+
+        document.getElementById('password').addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                // ถ้ากด Enter ที่ช่องรหัสผ่าน -> ให้กดปุ่ม Login ทันที
+                login();
+            }
+        });
+
 
         initSystem();
     </script>
