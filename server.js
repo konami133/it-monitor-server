@@ -35,17 +35,25 @@ const deviceSchema = new mongoose.Schema({
     mac_address: String,
     connection_type: String, 
     
-    // ✅ Hardware Specs
-    brand: String, model: String,
-    os: String, cpu_model: String, gpu: String,
-    ram_total: String, ram_type: String,
-    storage_model: String, serial_number: String,
+    // ✅ เช็คด่วน! บรรทัดพวกนี้ต้องมีครบ ข้อมูลถึงจะมาครับ
+    brand: String, 
+    model: String,
+    os: String,            
+    cpu_model: String,     
+    gpu: String,           
+    ram_total: String,     
+    ram_type: String,      
+    storage_model: String, 
+    serial_number: String, 
     
     // ✅ Network & Location
-    wifi_ssid: String, wifi_bssid: String, // Router MAC
-    isp: String, location_city: String,
-    lat: Number, lon: Number,
-    manual_geo: { type: Boolean, default: false }, // ล็อกพิกัดหรือไม่
+    wifi_ssid: String, 
+    wifi_bssid: String, // Router MAC
+    isp: String, 
+    location_city: String,
+    lat: Number, 
+    lon: Number,
+    manual_geo: { type: Boolean, default: false },
 
     // ✅ Status
     cpu_temp: Number, cpu: String, ram: String, disk_info: String,

@@ -256,20 +256,31 @@
         }
 
         function openDetails(h) {
-            const d = globalDevices.find(x=>x.hostname===h);
-            document.getElementById('det-friendlyName').innerText = d.friendlyName||'Unknown';
+            const d = globalDevices.find(x => x.hostname === h);
+            
+            document.getElementById('det-friendlyName').innerText = d.friendlyName || 'Unknown';
             document.getElementById('det-hostname').innerText = h;
-            document.getElementById('det-model-full').innerText = ((d.brand||'') + ' ' + (d.model||'')).trim() || 'Unknown Model';
-            document.getElementById('det-cpu').innerText = d.cpu_model||'-';
-            // ✅ RAM Type Logic
-            let ramShow = d.ram_total || '-'; if(d.ram_type && d.ram_type!=='Unknown') ramShow = `${d.ram_type} | ${ramShow}`;
+            
+            // แสดงยี่ห้อ + รุ่น
+            document.getElementById('det-model-full').innerText = ((d.brand || '') + ' ' + (d.model || '')).trim() || 'Unknown Model';
+            
+            // ✅ สูตรตัดคำ CPU ให้ชื่อสั้นสวยงาม (Clean CPU Name)
+            let cpuClean = d.cpu_model || '-';
+            cpuClean = cpuClean.replace(/Intel\(R\)|Core\(TM\)|CPU|@/gi, '').replace(/\d+\.\d+GHz/gi, '').trim();
+            // ตัวอย่าง: "Intel(R) Core(TM) i5-6400T CPU @ 2.20GHz" -> "i5-6400T"
+            document.getElementById('det-cpu').innerText = cpuClean;
+            
+            // RAM Type + Size
+            let ramShow = d.ram_total || '-';
+            if (d.ram_type && d.ram_type !== 'Unknown') ramShow = `${d.ram_type} | ${ramShow}`;
             document.getElementById('det-ram').innerText = ramShow;
-            document.getElementById('det-gpu').innerText = d.gpu||'-';
-            document.getElementById('det-storage').innerText = d.storage_model||'-';
-            document.getElementById('det-os').innerText = d.os||'-';
-            document.getElementById('det-ip').innerText = d.ip||'-';
-            document.getElementById('det-mac').innerText = d.mac_address||'-';
-            document.getElementById('det-serial').innerText = d.serial_number||'-';
+            
+            document.getElementById('det-gpu').innerText = d.gpu || '-';
+            document.getElementById('det-storage').innerText = d.storage_model || '-';
+            document.getElementById('det-os').innerText = d.os || '-';
+            document.getElementById('det-ip').innerText = d.ip || '-';
+            document.getElementById('det-mac').innerText = d.mac_address || '-';
+            document.getElementById('det-serial').innerText = d.serial_number || '-';
             document.getElementById('detailsModal').classList.remove('hidden');
         }
 
