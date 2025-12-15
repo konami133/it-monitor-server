@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IT Enterprise Monitor (Ultimate)</title>
+    <title>IT Enterprise Monitor (Fixed Specs)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -255,27 +255,25 @@
             });
         }
 
+        // ✅ จุดสำคัญ: ฟังก์ชัน openDetails ที่มีโค้ดตัดชื่อ CPU
         function openDetails(h) {
             const d = globalDevices.find(x => x.hostname === h);
             
             document.getElementById('det-friendlyName').innerText = d.friendlyName || 'Unknown';
             document.getElementById('det-hostname').innerText = h;
-            
-            // แสดงยี่ห้อ + รุ่น
             document.getElementById('det-model-full').innerText = ((d.brand || '') + ' ' + (d.model || '')).trim() || 'Unknown Model';
             
-            // ✅ สูตรตัดคำ CPU ให้ชื่อสั้นสวยงาม (Clean CPU Name)
+            // ✅ ตัดคำ CPU ให้สั้น
             let cpuClean = d.cpu_model || '-';
-            // ลบคำเวิ่นเว้อออก ให้เหลือแค่รุ่น
             cpuClean = cpuClean.replace(/Intel\(R\)|Core\(TM\)|CPU|@/gi, '').replace(/\d+\.\d+GHz/gi, '').trim();
             document.getElementById('det-cpu').innerText = cpuClean;
             
-            // RAM Type + Size
             let ramShow = d.ram_total || '-';
             if (d.ram_type && d.ram_type !== 'Unknown') ramShow = `${d.ram_type} | ${ramShow}`;
             document.getElementById('det-ram').innerText = ramShow;
             
             document.getElementById('det-gpu').innerText = d.gpu || '-';
+            // ✅ แสดง Storage
             document.getElementById('det-storage').innerText = d.storage_model || '-';
             document.getElementById('det-os').innerText = d.os || '-';
             document.getElementById('det-ip').innerText = d.ip || '-';
