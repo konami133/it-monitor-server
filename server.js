@@ -17,14 +17,6 @@ app.use(express.static('public'));
 // ==========================================
 // 1️⃣ DATABASE SCHEMA (ครบทุก Fields)
 // ==========================================
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: 'staff' },
-    permissions: [String] 
-});
-const User = mongoose.model('User', userSchema);
-
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
