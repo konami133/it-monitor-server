@@ -28,6 +28,8 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // Device Schema (เพิ่มช่องเก็บของที่หายไป)
+// ในไฟล์ server.js หาบรรทัด const deviceSchema = ... แล้วแก้เป็นแบบนี้ครับ
+
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
     friendlyName: String,
@@ -38,29 +40,19 @@ const deviceSchema = new mongoose.Schema({
     mac_address: String,
     connection_type: String, 
     
-    // ✅ เพิ่มส่วนนี้เพื่อให้เก็บ Spec ได้ครบ
-    os: String,            
-    cpu_model: String,     
-    gpu: String,           
-    ram_total: String,     
-    ram_type: String,      
-    storage_model: String, 
-    serial_number: String, 
+    // ✅ เพิ่ม 2 บรรทัดนี้ครับ
+    brand: String,         // ยี่ห้อ (เช่น Dell, HP, Lenovo)
+    model: String,         // รุ่น (เช่น OptiPlex 3050)
+    // ----------------------
+
+    os: String, cpu_model: String, gpu: String, 
+    ram_total: String, ram_type: String, 
+    storage_model: String, serial_number: String, 
     
-    location_city: String,
-    isp: String,
-    lat: Number,
-    lon: Number,
-    cpu_temp: Number,  
-    cpu: String,       
-    ram: String,       
-    disk_info: String,
-    last_update: String,
-    
-    last_seen: { type: Date, default: Date.now },
-    pendingCommand: String,
-    screenshot: String,
-    isAlerted: { type: Boolean, default: false }
+    location_city: String, isp: String, lat: Number, lon: Number,
+    cpu_temp: Number, cpu: String, ram: String, disk_info: String,
+    last_update: String, last_seen: { type: Date, default: Date.now },
+    pendingCommand: String, screenshot: String, isAlerted: { type: Boolean, default: false }
 });
 const Device = mongoose.model('Device', deviceSchema);
 

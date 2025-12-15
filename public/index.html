@@ -131,7 +131,7 @@
                     <div class="bg-blue-100 p-3 rounded-lg mr-4 flex-shrink-0"><i class="fas fa-laptop text-blue-600 text-2xl"></i></div>
                     <div class="overflow-hidden">
                         <h2 class="text-xl font-bold text-gray-900 truncate" id="det-friendlyName">-</h2>
-                        <p class="text-gray-500 text-sm font-mono truncate" id="det-hostname">-</p>
+                        <p class="text-indigo-600 font-bold text-sm mb-1" id="det-model-full">-</p> <p class="text-gray-400 text-xs font-mono truncate" id="det-hostname">-</p>
                     </div>
                 </div>
                 <div class="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm">
@@ -384,28 +384,32 @@
         }
 
         // ✅ FIX 2: ปรับปรุงฟังก์ชัน openDetails ให้รวม Type + Size
-        function openDetails(h) { 
-            const d=globalDevices.find(x=>x.hostname===h); 
+		function openDetails(h) { 
+            const d = globalDevices.find(x => x.hostname === h); 
             
-            // แก้ไขการแสดงชื่อ
-            document.getElementById('det-friendlyName').innerText=d.friendlyName||'Unknown'; 
-            document.getElementById('det-hostname').innerText=h; 
+            document.getElementById('det-friendlyName').innerText = d.friendlyName || 'Unknown'; 
+            document.getElementById('det-hostname').innerText = h; 
             
-            document.getElementById('det-cpu').innerText=d.cpu_model||'-'; 
+            // ✅ แสดง Brand + Model (เช่น Dell OptiPlex 3050)
+            const brand = d.brand || '';
+            const model = d.model || '';
+            const fullModel = (brand + ' ' + model).trim();
+            document.getElementById('det-model-full').innerText = fullModel || 'Unknown Model';
+
+            document.getElementById('det-cpu').innerText = d.cpu_model || '-'; 
             
-            // ✅ แสดง RAM แบบเต็ม (Type | Size)
             let ramShow = d.ram_total || '-';
             if (d.ram_type && d.ram_type !== 'Unknown') {
                 ramShow = `${d.ram_type} | ${ramShow}`;
             }
             document.getElementById('det-ram').innerText = ramShow;
             
-            document.getElementById('det-gpu').innerText=d.gpu||'-'; 
-            document.getElementById('det-storage').innerText=d.storage_model||'-'; 
-            document.getElementById('det-os').innerText=d.os||'-'; 
-            document.getElementById('det-ip').innerText=d.ip||'-'; 
-            document.getElementById('det-mac').innerText=d.mac_address||'-'; 
-            document.getElementById('det-serial').innerText=d.serial_number||'-'; 
+            document.getElementById('det-gpu').innerText = d.gpu || '-'; 
+            document.getElementById('det-storage').innerText = d.storage_model || '-'; 
+            document.getElementById('det-os').innerText = d.os || '-'; 
+            document.getElementById('det-ip').innerText = d.ip || '-'; 
+            document.getElementById('det-mac').innerText = d.mac_address || '-'; 
+            document.getElementById('det-serial').innerText = d.serial_number || '-'; 
             document.getElementById('detailsModal').classList.remove('hidden'); 
         }
 
