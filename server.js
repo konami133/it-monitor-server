@@ -15,7 +15,18 @@ app.use(cors());
 app.use(express.static('public'));
 
 // ==========================================
-// 1️⃣ DATABASE SCHEMA (ครบทุก Fields)
+// 1️⃣ USER SCHEMA (ต้องอยู่บนสุด! ห้ามย้าย)
+// ==========================================
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, default: 'staff' },
+    permissions: [String] 
+});
+const User = mongoose.model('User', userSchema);
+
+// ==========================================
+// 2️⃣ DEVICE SCHEMA (สเปคครบ + BSSID + Manual Geo)
 // ==========================================
 const deviceSchema = new mongoose.Schema({
     hostname: { type: String, required: true, unique: true },
@@ -27,7 +38,7 @@ const deviceSchema = new mongoose.Schema({
     mac_address: String,
     connection_type: String, 
     
-    // ✅ เช็คด่วน! บรรทัดพวกนี้ต้องมีครบ ข้อมูลถึงจะมาครับ
+    // Hardware Specs
     brand: String, 
     model: String,
     os: String,            
@@ -38,16 +49,16 @@ const deviceSchema = new mongoose.Schema({
     storage_model: String, 
     serial_number: String, 
     
-    // ✅ Network & Location
+    // Network & Location
     wifi_ssid: String, 
-    wifi_bssid: String, // Router MAC
+    wifi_bssid: String,
     isp: String, 
     location_city: String,
     lat: Number, 
     lon: Number,
     manual_geo: { type: Boolean, default: false },
 
-    // ✅ Status
+    // Status
     cpu_temp: Number, cpu: String, ram: String, disk_info: String,
     last_update: String, last_seen: { type: Date, default: Date.now },
     pendingCommand: String, screenshot: String, isAlerted: { type: Boolean, default: false }
@@ -55,24 +66,41 @@ const deviceSchema = new mongoose.Schema({
 const Device = mongoose.model('Device', deviceSchema);
 
 // ==========================================
-// 2️⃣ INIT SYSTEM
+// 3️⃣ สร้าง ADMIN (ถ้ายังไม่มี)
 // ==========================================
 async function initAdmin() {
     try {
         const count = await User.countDocuments();
         if (count === 0) {
-            const hp = await bcrypt.hash("password123", 10);
-            await User.create({ username: "admin", password: hp, role: "admin", permissions: ["manage_users", "delete_device", "control_device", "edit_device"] });
-            console.log("👑 Admin Created.");
+            console.log("⚠️ No users found. Creating default admin...");
+            const hashedPassword = await bcrypt.hash("password123", 10);
+            await User.create({
+                username: "admin",
+                password: hashedPassword,
+                role: "admin",
+                permissions: ["manage_users", "delete_device", "control_device", "edit_device"]
+            });
+            console.log("👑 Created default Admin: admin / password123");
         }
-    } catch (e) { console.error(e); }
+    } catch (error) {
+        console.error("❌ Init Admin Error:", error);
+    }
 }
 
-mongoose.connect(process.env.MONGODB_URI).then(() => { console.log('✅ DB Connected'); initAdmin(); }).catch(e => console.error(e));
+// ==========================================
+// 4️⃣ เชื่อมต่อ DB & เริ่ม Server
+// ==========================================
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+        console.log('✅ MongoDB Connected');
+        initAdmin();
+    })
+    .catch(err => console.error('❌ DB Error:', err));
 
 // ==========================================
-// 3️⃣ MIDDLEWARE & AUTH
+// 5️⃣ API ROUTES (Login & Data)
 // ==========================================
+
 const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -91,29 +119,32 @@ const checkPerm = (perm) => {
     };
 };
 
-// ==========================================
-// 4️⃣ ROUTES
-// ==========================================
+// 👉 Login Route
 app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (user && await bcrypt.compare(password, user.password)) {
-        const token = jwt.sign({ username: user.username, role: user.role, permissions: user.permissions, _id: user._id }, process.env.SECRET_KEY, { expiresIn: '12h' });
-        res.json({ token, role: user.role, permissions: user.permissions });
-    } else res.status(401).send('Invalid');
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+        if (user && await bcrypt.compare(password, user.password)) {
+            const token = jwt.sign({ username: user.username, role: user.role, permissions: user.permissions, _id: user._id }, process.env.SECRET_KEY, { expiresIn: '12h' });
+            res.json({ token, role: user.role, permissions: user.permissions });
+        } else {
+            res.status(401).send('Invalid Credentials');
+        }
+    } catch (e) { res.status(500).send('Error'); }
 });
 
-// Device Management
+// 👉 Device Management
 app.get('/api/devices', authenticateJWT, async (req, res) => {
-    const devices = await Device.find();
-    const now = new Date();
-    res.json(devices.map(d => ({ ...d.toObject(), status: (now - new Date(d.last_seen)) / 1000 > 60 ? 'offline' : 'online' })));
+    try {
+        const devices = await Device.find();
+        const now = new Date();
+        res.json(devices.map(d => ({ ...d.toObject(), status: (now - new Date(d.last_seen)) / 1000 > 60 ? 'offline' : 'online' })));
+    } catch (e) { res.status(500).send('Error'); }
 });
 
 app.post('/api/devices/update', authenticateJWT, checkPerm('edit_device'), async (req, res) => {
     const { hostname, friendlyName, group, location, lat, lon } = req.body;
     let updateFields = { friendlyName, group, location };
-    // ✅ ถ้ามีการปักหมุดเอง ให้ล็อกค่าไว้
     if (lat && lon) { updateFields.lat = parseFloat(lat); updateFields.lon = parseFloat(lon); updateFields.manual_geo = true; }
     await Device.updateOne({ hostname }, updateFields);
     res.json({ success: true });
@@ -129,15 +160,13 @@ app.delete('/api/devices/:hostname', authenticateJWT, checkPerm('delete_device')
     res.json({ success: true });
 });
 
-// Agent Report Endpoint
+// 👉 Agent Report
 app.post('/api/report', async (req, res) => {
     if (req.headers['x-agent-secret'] !== "BCGE2643AMySuperSecretKey2025") return res.status(403).json({ error: "Unauthorized" });
     const data = req.body;
     try {
         const existing = await Device.findOne({ hostname: data.hostname });
         let finalData = { ...data, last_seen: new Date(), isAlerted: false };
-        
-        // ✅ ถ้าล็อกหมุดไว้ อย่าให้ Agent เขียนทับพิกัด (แต่ให้เขียนทับ Network Info ได้ เพื่อจับพิรุธ)
         if (existing && existing.manual_geo) { delete finalData.lat; delete finalData.lon; delete finalData.location_city; }
         
         const device = await Device.findOneAndUpdate({ hostname: data.hostname }, finalData, { upsert: true, new: true });
@@ -156,7 +185,7 @@ app.post('/api/upload-screen', async (req, res) => {
     res.json({ success: true });
 });
 
-// User Management
+// 👉 User Management
 app.get('/api/users', authenticateJWT, checkPerm('manage_users'), async (req, res) => { res.json(await User.find({}, '-password')); });
 app.post('/api/users', authenticateJWT, checkPerm('manage_users'), async (req, res) => {
     const { username, password, role, permissions } = req.body;
@@ -171,4 +200,4 @@ app.put('/api/users/:id', authenticateJWT, checkPerm('manage_users'), async (req
 });
 app.delete('/api/users/:id', authenticateJWT, checkPerm('manage_users'), async (req, res) => { await User.findByIdAndDelete(req.params.id); res.json({ success: true }); });
 
-app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+app.listen(port, () => { console.log(`🚀 Server running on port ${port}`); });
