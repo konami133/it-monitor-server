@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IT Enterprise Monitor (Final Perfect)</title>
+    <title>IT Enterprise Monitor (Ultimate)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -20,28 +20,28 @@
 <body class="bg-gray-100 flex overflow-hidden">
 
     <div id="loginModal" class="fixed inset-0 bg-slate-900 z-[60] flex items-center justify-center p-4">
-        <div class="bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800">System Login</h2>
-            <input type="text" id="username" placeholder="Username" class="w-full p-3 border bg-gray-50 mb-4 rounded text-lg">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 border bg-gray-50 mb-6 rounded text-lg">
-            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-semibold hover:bg-blue-700 active:scale-95 transition text-lg">LOGIN</button>
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800">IT Monitor Login</h2>
+            <input type="text" id="username" placeholder="Username" class="w-full p-3 border mb-4 rounded">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 border mb-6 rounded">
+            <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700">LOGIN</button>
         </div>
     </div>
 
     <div id="dashboardContent" class="hidden w-full h-full flex relative">
-        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden glass"></div>
-        <aside id="sidebar" class="sidebar-transition absolute md:relative z-30 w-64 h-full bg-slate-900 text-slate-300 flex flex-col shadow-xl flex-shrink-0 transform -translate-x-full md:translate-x-0">
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden"></div>
+        
+        <aside id="sidebar" class="sidebar-transition absolute md:relative z-30 w-64 h-full bg-slate-900 text-slate-300 flex flex-col shadow-xl -translate-x-full md:translate-x-0">
             <div class="h-16 flex items-center justify-between px-4 border-b border-slate-700 bg-slate-800 text-white font-bold text-xl">
-                <span>IT MONITOR</span>
-                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+                <span>IT MONITOR</span><button onclick="toggleSidebar()" class="md:hidden"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-4 space-y-1">
-                <button onclick="switchView('dashboard'); toggleSidebar()" class="w-full text-left px-4 py-3 hover:bg-slate-800 rounded group-active" id="menu-dash"><i class="fas fa-desktop mr-3"></i> Dashboard</button>
-                <button onclick="switchView('users'); toggleSidebar()" class="hidden w-full text-left px-4 py-3 hover:bg-slate-800 rounded text-yellow-400" id="menu-users"><i class="fas fa-users-cog mr-3"></i> Users</button>
+                <button onclick="switchView('dashboard')" class="w-full text-left px-4 py-3 hover:bg-slate-800 rounded group-active" id="menu-dash"><i class="fas fa-desktop mr-3"></i> Dashboard</button>
+                <button onclick="switchView('users')" class="hidden w-full text-left px-4 py-3 hover:bg-slate-800 rounded text-yellow-400" id="menu-users"><i class="fas fa-users-cog mr-3"></i> Users</button>
             </div>
             <div class="flex-1 overflow-y-auto p-4 border-t border-slate-800 mt-2">
-                <p class="text-xs uppercase text-slate-500 font-bold mb-2">Device Groups</p>
-                <button onclick="filterGroup('ALL'); toggleSidebar()" id="btn-ALL" class="w-full text-left px-4 py-2 hover:bg-slate-800 rounded text-sm mb-1">All Devices</button>
+                <p class="text-xs uppercase text-slate-500 font-bold mb-2">Groups</p>
+                <button onclick="filterGroup('ALL')" id="btn-ALL" class="w-full text-left px-4 py-2 hover:bg-slate-800 rounded text-sm">All Devices</button>
                 <div id="groupList" class="space-y-1"></div>
             </div>
             <div class="p-4 border-t border-slate-700">
@@ -51,49 +51,38 @@
         </aside>
 
         <div class="flex-1 flex flex-col overflow-hidden w-full">
-            <header class="h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 z-10 flex-shrink-0">
+            <header class="h-16 bg-white shadow-sm flex items-center justify-between px-4 md:px-6 z-10">
                 <div class="flex items-center gap-3">
                     <button onclick="toggleSidebar()" class="md:hidden text-gray-600 text-xl p-2"><i class="fas fa-bars"></i></button>
-                    <h2 class="text-lg font-semibold text-gray-700 truncate max-w-[120px] md:max-w-none" id="headerTitle">Dashboard</h2>
+                    <h2 class="text-lg font-semibold text-gray-700 truncate" id="headerTitle">Dashboard</h2>
                 </div>
-                <div class="flex items-center gap-2 md:gap-4">
-                    <div class="relative hidden sm:block">
-                        <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Search..." class="pl-9 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500 w-40 md:w-64 transition-all">
-                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
-                    </div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Search..." class="hidden sm:block pl-4 pr-4 py-2 border rounded-lg text-sm w-64">
                     <button onclick="document.getElementById('searchInputMobile').classList.toggle('hidden')" class="sm:hidden text-gray-500 p-2"><i class="fas fa-search"></i></button>
-                    <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow flex-shrink-0">ON</div>
-                    <button onclick="logout()" class="md:hidden text-red-500 p-2 border border-red-200 rounded ml-1 bg-red-50" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+                    <div class="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow">ON</div>
+                    <button onclick="logout()" class="md:hidden text-red-500 p-2 border border-red-200 rounded ml-1 bg-red-50"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
             </header>
-            <div id="searchInputMobile" class="hidden bg-gray-50 p-2 border-b sm:hidden">
-                <input type="text" onkeyup="document.getElementById('searchInput').value=this.value; renderTable()" placeholder="Search..." class="w-full p-2 border rounded text-sm">
-            </div>
+            <div id="searchInputMobile" class="hidden bg-gray-50 p-2 border-b sm:hidden"><input type="text" onkeyup="document.getElementById('searchInput').value=this.value; renderTable()" placeholder="Search..." class="w-full p-2 border rounded text-sm"></div>
 
             <main id="view-dashboard" class="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div onclick="filterStatus('ALL')" id="card-ALL" class="bg-white p-4 md:p-5 rounded border-l-4 border-blue-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition card-active flex justify-between items-center sm:block"><div class="text-gray-500 text-sm font-bold uppercase">Total</div><div class="text-2xl md:text-3xl font-bold text-gray-800" id="totalCount">0</div></div>
-                    <div onclick="filterStatus('online')" id="card-online" class="bg-white p-4 md:p-5 rounded border-l-4 border-green-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition flex justify-between items-center sm:block"><div class="text-green-600 text-sm font-bold uppercase">Online</div><div class="text-2xl md:text-3xl font-bold text-green-700" id="onlineCount">0</div></div>
-                    <div onclick="filterStatus('offline')" id="card-offline" class="bg-white p-4 md:p-5 rounded border-l-4 border-red-500 shadow-sm cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition flex justify-between items-center sm:block"><div class="text-red-500 text-sm font-bold uppercase">Offline</div><div class="text-2xl md:text-3xl font-bold text-red-600" id="offlineCount">0</div></div>
+                    <div onclick="filterStatus('ALL')" id="card-ALL" class="bg-white p-4 rounded border-l-4 border-blue-500 shadow-sm cursor-pointer card-active"><div class="text-gray-500 text-sm font-bold">TOTAL</div><div class="text-2xl font-bold" id="totalCount">0</div></div>
+                    <div onclick="filterStatus('online')" id="card-online" class="bg-white p-4 rounded border-l-4 border-green-500 shadow-sm cursor-pointer"><div class="text-green-600 text-sm font-bold">ONLINE</div><div class="text-2xl font-bold text-green-700" id="onlineCount">0</div></div>
+                    <div onclick="filterStatus('offline')" id="card-offline" class="bg-white p-4 rounded border-l-4 border-red-500 shadow-sm cursor-pointer"><div class="text-red-500 text-sm font-bold">OFFLINE</div><div class="text-2xl font-bold text-red-600" id="offlineCount">0</div></div>
                 </div>
                 <div class="bg-white rounded shadow flex flex-col h-auto">
-                    <div class="px-4 py-3 md:px-6 md:py-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-gray-50">
-                        <h3 class="font-bold text-gray-700 text-sm md:text-base">Device List <span id="filterLabel" class="text-xs font-normal text-gray-500">(All)</span></h3>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <button onclick="exportToExcel()" class="flex-1 sm:flex-none text-green-600 hover:text-green-800 text-xs md:text-sm font-bold border border-green-600 px-3 py-1.5 rounded hover:bg-green-50 transition text-center justify-center flex items-center"><i class="fas fa-file-excel mr-1"></i> Export</button>
-                            <button onclick="fetchDevices()" class="flex-1 sm:flex-none text-blue-500 hover:text-blue-700 text-xs md:text-sm font-medium border border-blue-500 px-3 py-1.5 rounded hover:bg-blue-50 text-center justify-center flex items-center"><i class="fas fa-sync-alt mr-1"></i> Refresh</button>
+                    <div class="px-4 py-3 border-b flex justify-between items-center bg-gray-50">
+                        <h3 class="font-bold text-gray-700">Device List <span id="filterLabel" class="text-xs font-normal text-gray-500"></span></h3>
+                        <div class="flex gap-2">
+                            <button onclick="exportToExcel()" class="text-green-600 border border-green-600 px-3 py-1 rounded hover:bg-green-50 text-sm"><i class="fas fa-file-excel"></i> Export</button>
+                            <button onclick="fetchDevices()" class="text-blue-500 border border-blue-500 px-3 py-1 rounded hover:bg-blue-50 text-sm"><i class="fas fa-sync-alt"></i></button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto flex-1">
+                    <div class="overflow-x-auto">
                         <table class="w-full whitespace-no-wrap min-w-[800px]">
-                            <thead>
-                                <tr class="bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                    <th class="px-4 py-3 md:px-6">Status / Type</th>
-                                    <th class="px-4 py-3 md:px-6">Device Name</th>
-                                    <th class="px-4 py-3 md:px-6">Location</th>
-                                    <th class="px-4 py-3 md:px-6">Hardware Status</th>
-                                    <th class="px-4 py-3 md:px-6 text-center">Actions</th>
-                                </tr>
+                            <thead class="bg-gray-100 text-xs font-bold text-gray-600 uppercase text-left">
+                                <tr><th class="px-4 py-3">Status</th><th class="px-4 py-3">Name</th><th class="px-4 py-3">Location</th><th class="px-4 py-3">Info</th><th class="px-4 py-3 text-center">Actions</th></tr>
                             </thead>
                             <tbody id="deviceTable" class="bg-white divide-y divide-gray-100 text-sm"></tbody>
                         </table>
@@ -101,335 +90,240 @@
                 </div>
             </main>
 
-            <main id="view-users" class="hidden flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
-                <div class="bg-white rounded shadow overflow-hidden">
-                    <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
-                        <h3 class="font-bold text-gray-700">User Management</h3>
-                        <button onclick="openUserModal()" class="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"><i class="fas fa-plus mr-1"></i> Add</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full min-w-[600px]">
-                            <thead class="bg-gray-100 text-xs font-bold text-gray-600 uppercase text-left">
-                                <tr><th class="px-6 py-3">Username</th><th class="px-6 py-3">Role</th><th class="px-6 py-3">Permissions</th><th class="px-6 py-3 text-center">Manage</th></tr>
-                            </thead>
-                            <tbody id="userTable" class="divide-y divide-gray-100 text-sm"></tbody>
-                        </table>
-                    </div>
+            <main id="view-users" class="hidden flex-1 p-6">
+                <div class="bg-white rounded shadow">
+                    <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50"><h3 class="font-bold">Users</h3><button onclick="openUserModal()" class="bg-blue-600 text-white px-3 py-2 rounded text-sm">Add User</button></div>
+                    <table class="w-full"><tbody id="userTable" class="divide-y text-sm"></tbody></table>
                 </div>
             </main>
         </div>
     </div>
 
     <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
-             <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-2"><i class="fas fa-times text-xl"></i></button>
-            <div class="bg-gray-50 px-6 py-4 border-b">
-                <h3 class="text-lg font-bold text-gray-800">Device Specifications</h3>
-            </div>
+        <div class="bg-white w-full max-w-2xl rounded-lg shadow-2xl relative flex flex-col max-h-[90vh]">
+            <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-2"><i class="fas fa-times text-xl"></i></button>
             <div class="p-6 overflow-y-auto">
-                <div class="flex items-center mb-6">
-                    <div class="bg-blue-100 p-3 rounded-lg mr-4 flex-shrink-0"><i class="fas fa-laptop text-blue-600 text-2xl"></i></div>
-                    <div class="overflow-hidden">
-                        <h2 class="text-xl font-bold text-gray-900 truncate" id="det-friendlyName">-</h2>
-                        <p class="text-indigo-600 font-bold text-sm mb-1" id="det-model-full">-</p> <p class="text-gray-400 text-xs font-mono truncate" id="det-hostname">-</p>
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4"><i class="fas fa-laptop text-blue-600 text-2xl"></i></div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900" id="det-friendlyName">-</h2>
+                        <p class="text-indigo-600 font-bold text-sm" id="det-model-full">-</p>
+                        <p class="text-gray-400 text-xs font-mono" id="det-hostname">-</p>
                     </div>
                 </div>
-                <div class="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">Processor</span><span class="sm:col-span-2 font-medium text-gray-800 break-words" id="det-cpu">-</span></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">RAM</span><span class="sm:col-span-2 font-medium text-gray-800" id="det-ram">-</span></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">GPU</span><span class="sm:col-span-2 font-medium text-gray-800 break-words" id="det-gpu">-</span></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">Storage</span><span class="sm:col-span-2 font-medium text-gray-800 break-words" id="det-storage">-</span></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">OS</span><span class="sm:col-span-2 font-medium text-gray-800" id="det-os">-</span></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">IP Addr</span><span class="sm:col-span-2 font-mono font-medium text-indigo-600" id="det-ip">-</span></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b pb-2"><span class="text-gray-500">MAC</span><span class="sm:col-span-2 font-mono font-medium text-gray-600" id="det-mac">-</span></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1"><span class="text-gray-500 font-bold">Serial</span><span class="sm:col-span-2 font-mono font-bold text-gray-800 tracking-wider break-all" id="det-serial">-</span></div>
+                <div class="space-y-2 bg-gray-50 p-4 rounded text-sm border">
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">CPU</span><span class="col-span-2 font-medium" id="det-cpu">-</span></div>
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">RAM</span><span class="col-span-2 font-medium" id="det-ram">-</span></div>
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">GPU</span><span class="col-span-2 font-medium" id="det-gpu">-</span></div>
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">Storage</span><span class="col-span-2 font-medium" id="det-storage">-</span></div>
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium" id="det-os">-</span></div>
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">IP</span><span class="col-span-2 font-mono text-indigo-600" id="det-ip">-</span></div>
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">MAC</span><span class="col-span-2 font-mono" id="det-mac">-</span></div>
+                    <div class="grid grid-cols-3 pt-2"><span class="text-gray-500 font-bold">Serial</span><span class="col-span-2 font-mono font-bold" id="det-serial">-</span></div>
                 </div>
-            </div>
-            <div class="bg-gray-50 px-6 py-3 text-right">
-                <button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 w-full sm:w-auto">Close</button>
+                <div class="mt-4 text-right"><button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="bg-gray-200 px-4 py-2 rounded">Close</button></div>
             </div>
         </div>
     </div>
 
     <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-lg w-full max-w-sm shadow-xl">
-            <h3 class="text-lg font-bold mb-4">Edit Device</h3>
+            <h3 class="font-bold mb-4">Edit Device</h3>
             <input type="hidden" id="editHostname">
-            <input type="text" id="editName" class="w-full border p-3 rounded mb-3 text-sm" placeholder="Friendly Name">
-            <input type="text" id="editGroup" class="w-full border p-3 rounded mb-3 text-sm" placeholder="Group">
-            <input type="text" id="editLocation" class="w-full border p-3 rounded mb-6 text-sm" placeholder="Location">
+            <input type="text" id="editName" class="w-full border p-2 rounded mb-2 text-sm" placeholder="Friendly Name">
+            <input type="text" id="editGroup" class="w-full border p-2 rounded mb-2 text-sm" placeholder="Group">
+            <input type="text" id="editLocation" class="w-full border p-2 rounded mb-2 text-sm" placeholder="Location Name">
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <input type="text" id="editLat" class="border p-2 rounded text-sm" placeholder="Lat">
+                <input type="text" id="editLon" class="border p-2 rounded text-sm" placeholder="Lon">
+            </div>
             <div class="flex justify-end gap-2">
-                <button onclick="document.getElementById('editModal').classList.add('hidden')" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
-                <button onclick="saveDevice()" class="flex-1 bg-blue-600 text-white py-2 rounded">Save</button>
+                <button onclick="document.getElementById('editModal').classList.add('hidden')" class="bg-gray-200 py-2 px-4 rounded">Cancel</button>
+                <button onclick="saveDevice()" class="bg-blue-600 text-white py-2 px-4 rounded">Save</button>
             </div>
         </div>
     </div>
-    
+
     <div id="userModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
-            <h3 class="text-lg font-bold mb-4" id="userModalTitle">Add User</h3>
+            <h3 class="font-bold mb-4" id="userModalTitle">User</h3>
             <input type="hidden" id="userId">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                <div><label class="text-xs font-bold text-gray-500">Username</label><input type="text" id="formUser" class="w-full border p-2 rounded mt-1"></div>
-                <div><label class="text-xs font-bold text-gray-500">Password</label><input type="password" id="formPass" class="w-full border p-2 rounded mt-1" placeholder="Leave empty to keep"></div>
-            </div>
-            <div class="mb-4">
-                <label class="text-xs font-bold text-gray-500">Role</label>
-                <select id="formRole" class="w-full border p-2 rounded mt-1" onchange="togglePermissions()">
-                    <option value="staff">Staff</option>
-                    <option value="admin">System Admin</option>
-                </select>
-            </div>
-            <div class="mb-6 p-3 bg-gray-50 rounded border" id="permSection">
-                <label class="text-xs font-bold block mb-2 text-gray-500">Permissions</label>
-                <div class="space-y-3">
-                    <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="edit_device"> <span class="text-sm">Edit Info</span></label>
-                    <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="control_device"> <span class="text-sm">Control (Reboot/Shutdown)</span></label>
-                    <label class="flex items-center p-2 bg-white rounded border"><input type="checkbox" class="perm-chk mr-3 h-4 w-4" value="delete_device"> <span class="text-sm">Delete Device</span></label>
-                </div>
+            <input type="text" id="formUser" class="w-full border p-2 rounded mb-2" placeholder="Username">
+            <input type="password" id="formPass" class="w-full border p-2 rounded mb-2" placeholder="Password">
+            <select id="formRole" class="w-full border p-2 rounded mb-4" onchange="togglePerms()"><option value="staff">Staff</option><option value="admin">Admin</option></select>
+            <div id="permSection" class="space-y-2 mb-4 p-2 border rounded bg-gray-50">
+                <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="edit_device"> Edit</label>
+                <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="control_device"> Control</label>
+                <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="delete_device"> Delete</label>
             </div>
             <div class="flex justify-end gap-2">
-                <button onclick="document.getElementById('userModal').classList.add('hidden')" class="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-                <button onclick="saveUser()" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+                <button onclick="document.getElementById('userModal').classList.add('hidden')" class="bg-gray-200 px-4 py-2 rounded">Cancel</button>
+                <button onclick="saveUser()" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
             </div>
         </div>
     </div>
-    
+
     <div id="screenModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-[70] flex items-center justify-center p-2">
-        <div class="bg-white p-2 rounded-lg w-full max-w-5xl relative mx-auto flex flex-col h-[90vh]">
-            <div class="flex justify-between items-center mb-2 px-2 flex-shrink-0">
-                <h3 class="font-bold flex items-center gap-2"><i class="fas fa-desktop text-blue-600"></i> Remote View <span class="text-xs text-gray-400 font-normal">(Click image to zoom)</span></h3>
-                <div class="flex gap-2">
-                     <button onclick="refreshScreen()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs"><i class="fas fa-camera"></i> New Cap</button>
-                     <button onclick="closeScreenModal()" class="bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs">Close</button>
-                </div>
+        <div class="bg-white p-2 rounded-lg w-full max-w-5xl h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-2 px-2">
+                <h3 class="font-bold">Remote View <span class="text-xs font-normal text-gray-400">(Click to zoom)</span></h3>
+                <div><button onclick="refreshScreen()" class="bg-blue-600 text-white px-2 py-1 rounded text-xs mr-2">New Cap</button><button onclick="document.getElementById('screenModal').classList.add('hidden')" class="bg-gray-300 px-2 py-1 rounded text-xs">Close</button></div>
             </div>
-            <div id="screenContainer" class="flex-1 bg-gray-200 rounded overflow-auto relative flex justify-center items-start">
-                <span class="text-gray-500 animate-pulse mt-10">Waiting for image...</span>
-            </div>
+            <div id="screenContainer" class="flex-1 bg-gray-200 rounded overflow-auto flex justify-center items-start relative"><span class="mt-10 text-gray-500 animate-pulse">Requesting...</span></div>
         </div>
     </div>
 
     <script>
         const API_URL = "/api"; 
-        let globalDevices = []; let globalUsers = []; let currentUser = null; 
-        let currentGroupFilter = 'ALL'; let currentStatusFilter = 'ALL'; let currentViewingHost = null;
-        let logoutTimer; const AUTO_LOGOUT_TIME = 30 * 60 * 1000; 
+        let globalDevices=[], globalUsers=[], currentUser=null, currentGroupFilter='ALL', currentStatusFilter='ALL', currentViewingHost=null;
+        let logoutTimer; const AUTO_LOGOUT_TIME = 30 * 60 * 1000;
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            if(sidebar.classList.contains('-translate-x-full')) { sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden'); } else { sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden'); }
-        }
-
-        async function login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
+        function toggleSidebar() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); if(s.classList.contains('-translate-x-full')) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); } else { s.classList.add('-translate-x-full'); o.classList.add('hidden'); } }
+        async function login() { 
             try {
-                const res = await fetch(`${API_URL}/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username:u, password:p}) });
-                if(res.ok) {
-                    const data = await res.json();
-                    localStorage.setItem('token', data.token);
-                    currentUser = { username: u, role: data.role, permissions: data.permissions || [] };
-                    localStorage.setItem('userConfig', JSON.stringify(currentUser));
-                    initSystem();
-                } else alert("Login Failed");
-            } catch(e) { alert("Error: " + e); }
+                const res = await fetch(`${API_URL}/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username:document.getElementById('username').value, password:document.getElementById('password').value}) });
+                if(res.ok) { const data = await res.json(); localStorage.setItem('token', data.token); currentUser={username:document.getElementById('username').value, role:data.role, permissions:data.permissions}; localStorage.setItem('userConfig', JSON.stringify(currentUser)); initSystem(); } else alert("Login Failed");
+            } catch(e) { alert(e); }
         }
-        document.getElementById('username').addEventListener("keyup", function(e) { if(e.key==="Enter") document.getElementById("password").focus(); });
-        document.getElementById('password').addEventListener("keyup", function(e) { if(e.key==="Enter") login(); });
-
         function logout() { clearTimeout(logoutTimer); localStorage.clear(); location.reload(); }
-
         function initSystem() {
             const token = localStorage.getItem('token');
-            const savedUser = localStorage.getItem('userConfig');
-            if(token && savedUser) {
-                currentUser = JSON.parse(savedUser);
-                document.getElementById('loginModal').classList.add('hidden');
-                document.getElementById('dashboardContent').classList.remove('hidden');
-                document.getElementById('currentUserDisplay').innerText = `${currentUser.username}`;
-                if(currentUser.role === 'admin' || currentUser.permissions.includes('manage_users')) { document.getElementById('menu-users').classList.remove('hidden'); }
+            if(token && localStorage.getItem('userConfig')) {
+                currentUser = JSON.parse(localStorage.getItem('userConfig'));
+                document.getElementById('loginModal').classList.add('hidden'); document.getElementById('dashboardContent').classList.remove('hidden');
+                document.getElementById('currentUserDisplay').innerText = currentUser.username;
+                if(currentUser.role==='admin' || currentUser.permissions.includes('manage_users')) document.getElementById('menu-users').classList.remove('hidden');
                 startAutoLogout(); fetchDevices(); setInterval(fetchDevices, 5000);
             }
         }
-
-        function startAutoLogout() {
-            const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
-            events.forEach(evt => document.addEventListener(evt, resetLogoutTimer));
-            resetLogoutTimer();
-        }
-        function resetLogoutTimer() {
-            clearTimeout(logoutTimer);
-            if (localStorage.getItem('token')) { logoutTimer = setTimeout(() => { alert("Session timed out."); logout(); }, AUTO_LOGOUT_TIME); }
-        }
-
-        function switchView(view) {
-            document.getElementById('view-dashboard').classList.add('hidden');
-            document.getElementById('view-users').classList.add('hidden');
-            document.getElementById(`view-${view}`).classList.remove('hidden');
-            document.querySelectorAll('aside button').forEach(b => b.classList.remove('group-active'));
-            document.getElementById(`menu-${view === 'dashboard' ? 'dash' : 'users'}`).classList.add('group-active');
-            if(view === 'users') fetchUsers();
-        }
-
+        function startAutoLogout() { ['mousemove','click','keypress'].forEach(e => document.addEventListener(e, () => { clearTimeout(logoutTimer); if(localStorage.getItem('token')) logoutTimer = setTimeout(() => { alert("Timeout"); logout(); }, AUTO_LOGOUT_TIME); })); }
+        
+        function switchView(v) { document.getElementById('view-dashboard').classList.add('hidden'); document.getElementById('view-users').classList.add('hidden'); document.getElementById(`view-${v}`).classList.remove('hidden'); if(v==='users') fetchUsers(); toggleSidebar(); }
+        
         async function fetchDevices() {
-            const token = localStorage.getItem('token'); if(!token) return;
             try {
-                const res = await fetch(`${API_URL}/devices`, { headers: { 'Authorization': `Bearer ${token}` }});
+                const res = await fetch(`${API_URL}/devices`, { headers: {'Authorization':`Bearer ${localStorage.getItem('token')}`} });
                 if(res.ok) {
                     globalDevices = await res.json();
-                    renderSidebarGroups(); renderTable(); updateCounts();
+                    const groups = [...new Set(globalDevices.map(d=>d.group||'Unassigned'))].sort();
+                    document.getElementById('groupList').innerHTML = groups.map(g=>`<button onclick="filterGroup('${g}')" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-sm text-gray-300">${g}</button>`).join('');
+                    renderTable(); updateCounts();
                     if(currentViewingHost) {
-                        const target = globalDevices.find(d => d.hostname === currentViewingHost);
-                        if(target && target.screenshot) {
-                            const container = document.getElementById('screenContainer');
-                            if(!container.querySelector('img')) {
-                                container.innerHTML = `<img src="data:image/jpeg;base64,${target.screenshot}" class="zoom-in max-w-full h-auto shadow-lg transition-transform" onclick="toggleZoom(this)">`;
-                            } else { container.querySelector('img').src = `data:image/jpeg;base64,${target.screenshot}`; }
+                        const t = globalDevices.find(d=>d.hostname===currentViewingHost);
+                        if(t && t.screenshot) {
+                            const c = document.getElementById('screenContainer');
+                            if(!c.querySelector('img')) c.innerHTML = `<img src="data:image/jpeg;base64,${t.screenshot}" class="zoom-in max-w-full h-auto shadow-lg" onclick="toggleZoom(this)">`;
+                            else c.querySelector('img').src = `data:image/jpeg;base64,${t.screenshot}`;
                         }
                     }
                 }
             } catch(e) {}
         }
 
-        function updateCounts() {
-            const total = globalDevices.length;
-            const online = globalDevices.filter(d => d.status === 'online').length;
-            const offline = globalDevices.filter(d => d.status !== 'online').length;
-            document.getElementById('totalCount').innerText = total;
-            document.getElementById('onlineCount').innerText = online;
-            document.getElementById('offlineCount').innerText = offline;
-        }
-
-        function filterStatus(status) {
-            currentStatusFilter = status;
-            ['ALL', 'online', 'offline'].forEach(s => {
-                const card = document.getElementById(`card-${s}`);
-                if(s === status) card.classList.add('card-active', 'border-blue-500');
-                else card.classList.remove('card-active', 'border-blue-500');
-            });
-            renderTable();
-        }
+        function updateCounts() { document.getElementById('totalCount').innerText = globalDevices.length; document.getElementById('onlineCount').innerText = globalDevices.filter(d=>d.status==='online').length; document.getElementById('offlineCount').innerText = globalDevices.filter(d=>d.status!=='online').length; }
+        function filterGroup(g) { currentGroupFilter = g; renderTable(); }
+        function filterStatus(s) { currentStatusFilter = s; ['ALL','online','offline'].forEach(x => document.getElementById(`card-${x}`).classList.toggle('card-active', x===s)); renderTable(); }
 
         function renderTable() {
             const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            let displayDevices = globalDevices.filter(d => {
-                const matchGroup = currentGroupFilter === 'ALL' || (d.group || 'Unassigned') === currentGroupFilter;
-                let matchStatus = true;
-                if(currentStatusFilter === 'online') matchStatus = d.status === 'online';
-                if(currentStatusFilter === 'offline') matchStatus = d.status !== 'online';
-                const searchStr = `${d.hostname} ${d.friendlyName} ${d.ip} ${d.group}`.toLowerCase();
-                const matchSearch = searchStr.includes(searchText);
-                return matchGroup && matchStatus && matchSearch;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = globalDevices.filter(d => {
+                const gMatch = currentGroupFilter==='ALL' || (d.group||'Unassigned')===currentGroupFilter;
+                const sMatch = currentStatusFilter==='ALL' || (currentStatusFilter==='online' ? d.status==='online' : d.status!=='online');
+                return gMatch && sMatch && (d.hostname+d.friendlyName+d.ip).toLowerCase().includes(search);
             });
-            let filterText = `(${currentGroupFilter})`;
-            if(currentStatusFilter !== 'ALL') filterText += ` [${currentStatusFilter.toUpperCase()}]`;
-            document.getElementById('filterLabel').innerText = filterText;
+            document.getElementById('filterLabel').innerText = `(${currentGroupFilter})`;
 
-            displayDevices.forEach(d => {
-                const isOnline = d.status === 'online';
-                let connIcon = '';
-                if(isOnline) {
-                    if(d.connection_type === 'internet') connIcon = `<i class="fas fa-globe text-blue-500 ml-1" title="Cloud"></i>`;
-                    else if(d.connection_type === 'local') connIcon = `<i class="fas fa-building text-orange-500 ml-1" title="Local"></i>`;
-                }
-                const statusBadge = isOnline ? `<span class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">ONLINE</span>` : `<span class="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800">OFFLINE</span>`;
-                let tempDisplay = '';
-                if (d.cpu_temp) {
-                    if (d.cpu_temp >= 80) tempDisplay = `<span class="text-red-600 font-bold animate-pulse block md:inline ml-1"><i class="fas fa-fire"></i> ${d.cpu_temp}°C</span>`;
-                    else tempDisplay = `<span class="text-green-600 block md:inline text-[10px] ml-1"><i class="fas fa-thermometer-half"></i> ${d.cpu_temp}°C</span>`;
-                }
-                let hddStyle = "text-blue-600";
-                let hddText = d.disk_info ? d.disk_info.split('|')[0] : '-';
-                const freeSpaceMatch = hddText.match(/Free\s+([0-9.]+)\s*GB/i);
-                if (freeSpaceMatch && parseFloat(freeSpaceMatch[1]) < 20) { hddStyle = "text-red-600 font-bold animate-pulse"; hddText = "⚠️ " + hddText; }
+            filtered.forEach(d => {
+                const isOnline = d.status==='online';
+                const statusBadge = isOnline ? `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">ONLINE</span>` : `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">OFFLINE</span>`;
+                let tempDisp = d.cpu_temp ? (d.cpu_temp>=80 ? `<span class="text-red-600 font-bold animate-pulse">${d.cpu_temp}°C</span>` : `<span class="text-green-600">${d.cpu_temp}°C</span>`) : '';
+                
+                // SysInfo String
+                let sysInfo = `<div class="text-xs space-y-1"><div class="flex items-center"><i class="fas fa-network-wired w-4 text-indigo-500"></i> <span class="font-mono font-bold text-indigo-700">${d.ip}</span></div>`;
+                sysInfo += `<div class="flex items-center gap-2"><span class="text-gray-600 font-bold">CPU:</span> ${d.cpu} ${tempDisp} | <span class="text-gray-600 font-bold">RAM:</span> ${d.ram}</div>`;
+                sysInfo += `<div class="truncate max-w-[150px] text-[10px] text-gray-500"><i class="fas fa-wifi text-blue-400"></i> <b>${d.wifi_ssid||'LAN'}</b> (${d.isp||'-'})</div>`;
+                sysInfo += `<div class="text-[9px] text-gray-400 font-mono"><i class="fas fa-broadcast-tower"></i> ${d.wifi_bssid||'-'}</div></div>`;
 
-                const sysInfo = `
-                    <div class="text-xs text-gray-700 space-y-1">
-                        <div class="mb-1" title="Network Info">
-                            <div class="flex items-center">
-                                 <i class="fas fa-network-wired text-indigo-500 w-4"></i>
-                                 <span class="text-indigo-700 font-mono font-bold mr-2">${d.ip || '-'}</span>
-                            </div>
-                            <div class="text-gray-400 font-mono text-[10px] ml-4 md:ml-0 md:inline-block">
-                                <i class="fas fa-fingerprint w-3 md:hidden text-gray-300"></i> 
-                                <span class="hidden md:inline text-gray-300 mx-1">|</span>
-                                ${d.mac_address || '-'}
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <div class="flex items-center"><i class="fas fa-microchip text-gray-500 w-4"></i> <span class="font-bold text-gray-600">CPU:</span> ${d.cpu || '0%'} ${tempDisplay}</div>
-                            <span class="text-gray-300 hidden md:inline">|</span>
-                            <div class="flex items-center"><i class="fas fa-memory text-gray-500 w-4"></i> <span class="font-bold text-gray-600">RAM:</span> ${d.ram || '0%'}</div>
-                        </div>
-                        <div class="${hddStyle} truncate max-w-[200px] flex items-center"><i class="fas fa-hdd w-4"></i> ${hddText}</div>
-                    </div>
-                `;
-                const locationInfo = `<div class="text-sm font-semibold text-indigo-700 truncate max-w-[100px] md:max-w-none">${d.group || '-'}</div><div class="text-xs text-gray-500 font-bold truncate">${d.location || ''}</div>`;
-                let buttons = `<div class="flex justify-center gap-1 flex-wrap"><button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded hover:bg-blue-100"><i class="fas fa-info-circle"></i></button>`;
-                if(hasPerm('edit_device')) buttons += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded hover:bg-gray-200"><i class="fas fa-edit"></i></button>`;
-                if(hasPerm('control_device') && isOnline) {
-                    buttons += `<button onclick="sendCommand('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded hover:bg-orange-100"><i class="fas fa-sync"></i></button>
-                                <button onclick="sendCommand('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded hover:bg-red-100"><i class="fas fa-power-off"></i></button>
-                                <button onclick="requestScreenshot('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded hover:bg-purple-100"><i class="fas fa-eye"></i></button>`;
-                }
-                if(hasPerm('delete_device')) buttons += `<button onclick="deleteDevice('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded hover:bg-red-100"><i class="fas fa-trash"></i></button>`;
-                buttons += `</div>`;
+                let btns = `<div class="flex justify-center gap-1"><button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded"><i class="fas fa-info-circle"></i></button>`;
+                if(hasPerm('edit_device')) btns += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded"><i class="fas fa-edit"></i></button>`;
+                if(hasPerm('control_device') && isOnline) btns += `<button onclick="cmd('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded"><i class="fas fa-sync"></i></button><button onclick="cmd('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded"><i class="fas fa-power-off"></i></button><button onclick="reqScreen('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded"><i class="fas fa-eye"></i></button>`;
+                if(hasPerm('delete_device')) btns += `<button onclick="delDev('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>`;
+                btns += `</div>`;
 
-                const row = `<tr class="hover:bg-gray-50 border-b border-gray-100"><td class="px-4 py-3 md:px-6 align-top"><div>${statusBadge}</div><div class="mt-1">${connIcon}</div></td><td class="px-4 py-3 md:px-6 align-top"><div class="font-bold text-gray-800 text-sm truncate max-w-[120px] md:max-w-none">${d.friendlyName || d.hostname}</div><div class="text-xs text-gray-400 font-mono truncate max-w-[100px] md:max-w-none">${d.hostname}</div></td><td class="px-4 py-3 md:px-6 align-top">${locationInfo}</td><td class="px-4 py-3 md:px-6 align-top">${sysInfo}</td><td class="px-4 py-3 md:px-6 align-top text-center">${buttons}</td></tr>`;
-                tbody.innerHTML += row;
+                tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 align-top">${statusBadge}<div class="mt-1 text-xs">${d.connection_type==='local'?'🏢 Local':'☁️ Net'}</div></td><td class="px-4 py-3 align-top"><div class="font-bold text-sm">${d.friendlyName||d.hostname}</div><div class="text-xs text-gray-400 font-mono">${d.hostname}</div></td><td class="px-4 py-3 align-top text-xs">${d.group||'-'}<br>${d.location||'-'}</td><td class="px-4 py-3 align-top">${sysInfo}</td><td class="px-4 py-3 align-top text-center">${btns}</td></tr>`;
             });
         }
 
-        // ✅ FIX 2: ปรับปรุงฟังก์ชัน openDetails ให้รวม Type + Size
-		function openDetails(h) { 
-            const d = globalDevices.find(x => x.hostname === h); 
-            
-            document.getElementById('det-friendlyName').innerText = d.friendlyName || 'Unknown'; 
-            document.getElementById('det-hostname').innerText = h; 
-            
-            // ✅ แสดง Brand + Model (เช่น Dell OptiPlex 3050)
-            const brand = d.brand || '';
-            const model = d.model || '';
-            const fullModel = (brand + ' ' + model).trim();
-            document.getElementById('det-model-full').innerText = fullModel || 'Unknown Model';
-
-            document.getElementById('det-cpu').innerText = d.cpu_model || '-'; 
-            
-            let ramShow = d.ram_total || '-';
-            if (d.ram_type && d.ram_type !== 'Unknown') {
-                ramShow = `${d.ram_type} | ${ramShow}`;
-            }
+        function openDetails(h) {
+            const d = globalDevices.find(x=>x.hostname===h);
+            document.getElementById('det-friendlyName').innerText = d.friendlyName||'Unknown';
+            document.getElementById('det-hostname').innerText = h;
+            document.getElementById('det-model-full').innerText = ((d.brand||'') + ' ' + (d.model||'')).trim() || 'Unknown Model';
+            document.getElementById('det-cpu').innerText = d.cpu_model||'-';
+            // ✅ RAM Type Logic
+            let ramShow = d.ram_total || '-'; if(d.ram_type && d.ram_type!=='Unknown') ramShow = `${d.ram_type} | ${ramShow}`;
             document.getElementById('det-ram').innerText = ramShow;
-            
-            document.getElementById('det-gpu').innerText = d.gpu || '-'; 
-            document.getElementById('det-storage').innerText = d.storage_model || '-'; 
-            document.getElementById('det-os').innerText = d.os || '-'; 
-            document.getElementById('det-ip').innerText = d.ip || '-'; 
-            document.getElementById('det-mac').innerText = d.mac_address || '-'; 
-            document.getElementById('det-serial').innerText = d.serial_number || '-'; 
-            document.getElementById('detailsModal').classList.remove('hidden'); 
+            document.getElementById('det-gpu').innerText = d.gpu||'-';
+            document.getElementById('det-storage').innerText = d.storage_model||'-';
+            document.getElementById('det-os').innerText = d.os||'-';
+            document.getElementById('det-ip').innerText = d.ip||'-';
+            document.getElementById('det-mac').innerText = d.mac_address||'-';
+            document.getElementById('det-serial').innerText = d.serial_number||'-';
+            document.getElementById('detailsModal').classList.remove('hidden');
         }
 
-        function toggleZoom(img) { if (img.classList.contains('zoom-in')) { img.classList.remove('zoom-in', 'max-w-full', 'h-auto'); img.classList.add('zoom-out'); } else { img.classList.remove('zoom-out'); img.classList.add('zoom-in', 'max-w-full', 'h-auto'); } }
-        function exportToExcel() { if(globalDevices.length === 0) return alert("No data"); const d = globalDevices.map(x => ({ Hostname: x.hostname, Name: x.friendlyName, IP: x.ip })); const ws = XLSX.utils.json_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Devices"); XLSX.writeFile(wb, "Report.xlsx"); }
-        function renderSidebarGroups() { const g = [...new Set(globalDevices.map(d=>d.group||'Unassigned'))].sort(); document.getElementById('groupList').innerHTML = g.map(x=>`<button onclick="filterGroup('${x}')" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-sm text-gray-300">${x}</button>`).join(''); }
-        function filterGroup(g) { currentGroupFilter = g; renderTable(); }
-        function hasPerm(p) { return currentUser && (currentUser.role === 'admin' || currentUser.permissions.includes(p)); }
-        function openEdit(h) { const d = globalDevices.find(x=>x.hostname===h); document.getElementById('editHostname').value=h; document.getElementById('editName').value=d.friendlyName||''; document.getElementById('editGroup').value=d.group||''; document.getElementById('editLocation').value=d.location||''; document.getElementById('editModal').classList.remove('hidden'); }
-        async function saveDevice() { const b={hostname:document.getElementById('editHostname').value, friendlyName:document.getElementById('editName').value, group:document.getElementById('editGroup').value, location:document.getElementById('editLocation').value}; await fetch(`${API_URL}/devices/update`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`},body:JSON.stringify(b)}); document.getElementById('editModal').classList.add('hidden'); fetchDevices(); }
-        async function sendCommand(h,c) { if(confirm(`${c} ${h}?`)) await fetch(`${API_URL}/devices/command`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`},body:JSON.stringify({hostname:h,command:c})}); alert('Sent'); }
-        async function requestScreenshot(h) { currentViewingHost=h; document.getElementById('screenModal').classList.remove('hidden'); document.getElementById('screenContainer').innerHTML='<span class="text-gray-500 animate-pulse mt-10">Requesting...</span>'; await sendCommand(h,'screenshot'); }
-        function closeScreenModal() { document.getElementById('screenModal').classList.add('hidden'); currentViewingHost=null; }
-        function refreshScreen() { if(currentViewingHost) requestScreenshot(currentViewingHost); }
-        async function deleteDevice(h) { if(confirm(`Delete ${h}?`)) { await fetch(`${API_URL}/devices/${h}`,{method:'DELETE',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); fetchDevices(); } }
-        async function fetchUsers() { const r=await fetch(`${API_URL}/users`,{headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); if(r.ok) { globalUsers=await r.json(); document.getElementById('userTable').innerHTML=globalUsers.map(u=>`<tr class="border-b"><td class="px-6 py-4 font-bold">${u.username}</td><td class="px-6 py-4">${u.role}</td><td class="px-6 py-4 text-xs">${u.role==='admin'?'ALL':(u.permissions||[]).join(', ')}</td><td class="px-6 py-4 text-center"><button onclick="openUserModal('${u._id}')" class="text-blue-500 mr-3"><i class="fas fa-edit"></i></button>${u.username!=='admin'?`<button onclick="deleteUser('${u._id}')" class="text-red-500"><i class="fas fa-trash"></i></button>`:''}</td></tr>`).join(''); } }
-        function openUserModal(id = null) { const modal = document.getElementById('userModal'); modal.classList.remove('hidden'); if(id) { const u = globalUsers.find(x => x._id === id); document.getElementById('userModalTitle').innerText = "Edit User"; document.getElementById('userId').value = u._id; document.getElementById('formUser').value = u.username; document.getElementById('formUser').disabled = true; document.getElementById('formPass').value = ""; document.getElementById('formRole').value = u.role; document.querySelectorAll('.perm-chk').forEach(c => c.checked = (u.permissions||[]).includes(c.value)); } else { document.getElementById('userModalTitle').innerText = "Add User"; document.getElementById('userId').value = ""; document.getElementById('formUser').value = ""; document.getElementById('formUser').disabled = false; document.getElementById('formPass').value = ""; document.getElementById('formRole').value = "staff"; document.querySelectorAll('.perm-chk').forEach(c => c.checked = false); } togglePermissions(); }
-        function togglePermissions() { const role = document.getElementById('formRole').value; const permSec = document.getElementById('permSection'); if(role === 'admin') permSec.classList.add('opacity-50', 'pointer-events-none'); else permSec.classList.remove('opacity-50', 'pointer-events-none'); }
-        async function saveUser() { const id = document.getElementById('userId').value; const body = { username: document.getElementById('formUser').value, password: document.getElementById('formPass').value, role: document.getElementById('formRole').value, permissions: Array.from(document.querySelectorAll('.perm-chk:checked')).map(c => c.value) }; const method = id ? 'PUT' : 'POST'; const url = id ? `${API_URL}/users/${id}` : `${API_URL}/users`; await fetch(url, { method: method, headers: {'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`}, body: JSON.stringify(body) }); document.getElementById('userModal').classList.add('hidden'); fetchUsers(); }
-        async function deleteUser(id) { if(confirm("Delete?")) { await fetch(`${API_URL}/users/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); fetchUsers(); } }
+        function hasPerm(p) { return currentUser && (currentUser.role==='admin' || currentUser.permissions.includes(p)); }
+        function toggleZoom(img) { img.classList.toggle('zoom-in'); img.classList.toggle('zoom-out'); img.classList.toggle('max-w-full'); img.classList.toggle('h-auto'); }
+        async function cmd(h,c) { if(confirm(`${c}?`)) await fetch(`${API_URL}/devices/command`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`},body:JSON.stringify({hostname:h,command:c})}); }
+        async function reqScreen(h) { currentViewingHost=h; document.getElementById('screenModal').classList.remove('hidden'); document.getElementById('screenContainer').innerHTML='<span class="animate-pulse mt-10">Waiting...</span>'; await cmd(h,'screenshot'); }
+        function refreshScreen() { if(currentViewingHost) reqScreen(currentViewingHost); }
+        
+        function openEdit(h) { 
+            const d = globalDevices.find(x=>x.hostname===h); 
+            document.getElementById('editHostname').value=h; 
+            document.getElementById('editName').value=d.friendlyName||''; 
+            document.getElementById('editGroup').value=d.group||''; 
+            document.getElementById('editLocation').value=d.location||'';
+            document.getElementById('editLat').value=d.lat||'';
+            document.getElementById('editLon').value=d.lon||'';
+            document.getElementById('editModal').classList.remove('hidden'); 
+        }
+        async function saveDevice() { 
+            await fetch(`${API_URL}/devices/update`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`},
+            body:JSON.stringify({hostname:document.getElementById('editHostname').value, friendlyName:document.getElementById('editName').value, group:document.getElementById('editGroup').value, location:document.getElementById('editLocation').value, lat:document.getElementById('editLat').value, lon:document.getElementById('editLon').value})});
+            document.getElementById('editModal').classList.add('hidden'); fetchDevices();
+        }
+        async function delDev(h) { if(confirm("Delete?")) { await fetch(`${API_URL}/devices/${h}`,{method:'DELETE',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); fetchDevices(); } }
+
+        // Users
+        async function fetchUsers() { 
+            const res = await fetch(`${API_URL}/users`,{headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); 
+            if(res.ok) { 
+                const users = await res.json(); 
+                document.getElementById('userTable').innerHTML = users.map(u=>`<tr><td class="px-6 py-4 font-bold">${u.username}</td><td class="px-6 py-4">${u.role}</td><td class="px-6 py-4 text-center"><button onclick="openUserModal('${u._id}')" class="text-blue-500 mr-2"><i class="fas fa-edit"></i></button>${u.username!=='admin'?`<button onclick="delUser('${u._id}')" class="text-red-500"><i class="fas fa-trash"></i></button>`:''}</td></tr>`).join(''); 
+            } 
+        }
+        function openUserModal(id) { 
+            document.getElementById('userModal').classList.remove('hidden'); 
+            const t = document.getElementById('userModalTitle');
+            if(id) {
+                const u = globalUsers.find(x=>x._id===id); t.innerText="Edit"; document.getElementById('userId').value=u._id; document.getElementById('formUser').value=u.username; document.getElementById('formUser').disabled=true; document.getElementById('formRole').value=u.role; 
+                document.querySelectorAll('.perm-chk').forEach(c=>c.checked=(u.permissions||[]).includes(c.value));
+            } else {
+                t.innerText="Add"; document.getElementById('userId').value=""; document.getElementById('formUser').value=""; document.getElementById('formUser').disabled=false; document.getElementById('formRole').value="staff"; document.querySelectorAll('.perm-chk').forEach(c=>c.checked=false);
+            }
+            togglePerms();
+        }
+        function togglePerms() { document.getElementById('permSection').classList.toggle('opacity-50', document.getElementById('formRole').value==='admin'); }
+        async function saveUser() {
+            const id = document.getElementById('userId').value; const method = id?'PUT':'POST'; const url = id?`${API_URL}/users/${id}`:`${API_URL}/users`;
+            await fetch(url, {method, headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`}, 
+            body:JSON.stringify({username:document.getElementById('formUser').value, password:document.getElementById('formPass').value, role:document.getElementById('formRole').value, permissions:Array.from(document.querySelectorAll('.perm-chk:checked')).map(c=>c.value)})});
+            document.getElementById('userModal').classList.add('hidden'); fetchUsers();
+        }
+        async function delUser(id) { if(confirm("Delete?")) { await fetch(`${API_URL}/users/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); fetchUsers(); } }
+        function exportToExcel() { const d=globalDevices.map(x=>({Name:x.friendlyName, IP:x.ip})); const w=XLSX.utils.json_to_sheet(d); const b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"Report.xlsx"); }
     </script>
 </body>
 </html>
