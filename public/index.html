@@ -268,7 +268,6 @@
             let cpuClean = d.cpu_model || '-';
             // ลบคำเวิ่นเว้อออก ให้เหลือแค่รุ่น
             cpuClean = cpuClean.replace(/Intel\(R\)|Core\(TM\)|CPU|@/gi, '').replace(/\d+\.\d+GHz/gi, '').trim();
-            // ตัวอย่าง: "Intel(R) Core(TM) i5-6400T CPU @ 2.20GHz" -> "i5-6400T"
             document.getElementById('det-cpu').innerText = cpuClean;
             
             // RAM Type + Size
