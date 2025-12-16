@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IT Enterprise Monitor (Fixed Specs)</title>
+    <title>IT Enterprise Monitor (Complete)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -115,7 +115,9 @@
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">CPU</span><span class="col-span-2 font-medium" id="det-cpu">-</span></div>
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">RAM</span><span class="col-span-2 font-medium" id="det-ram">-</span></div>
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">GPU</span><span class="col-span-2 font-medium" id="det-gpu">-</span></div>
-                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">Storage</span><span class="col-span-2 font-medium" id="det-storage">-</span></div>
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">Storage</span><span class="col-span-2 font-medium" id="det-storage-model">-</span></div>
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">Disk Usage</span><span class="col-span-2 font-medium" id="det-disk-usage">-</span></div>
+                    
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium" id="det-os">-</span></div>
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">IP</span><span class="col-span-2 font-mono text-indigo-600" id="det-ip">-</span></div>
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">MAC</span><span class="col-span-2 font-mono" id="det-mac">-</span></div>
@@ -224,6 +226,7 @@
         function filterGroup(g) { currentGroupFilter = g; renderTable(); }
         function filterStatus(s) { currentStatusFilter = s; ['ALL','online','offline'].forEach(x => document.getElementById(`card-${x}`).classList.toggle('card-active', x===s)); renderTable(); }
 
+        // ✅ ฟังก์ชันแสดงผลตาราง (พร้อมระบบ Alert HDD)
         function renderTable() {
             const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
             const search = document.getElementById('searchInput').value.toLowerCase();
@@ -239,9 +242,24 @@
                 const statusBadge = isOnline ? `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">ONLINE</span>` : `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">OFFLINE</span>`;
                 let tempDisp = d.cpu_temp ? (d.cpu_temp>=80 ? `<span class="text-red-600 font-bold animate-pulse">${d.cpu_temp}°C</span>` : `<span class="text-green-600">${d.cpu_temp}°C</span>`) : '';
                 
-                // SysInfo String
+                // --- HDD Alert Logic ---
+                let diskDisplay = "";
+                if(d.disk_info && d.disk_info !== 'Unknown') {
+                    // C: Free 10GB/100GB -> เช็คว่า Free น้อยกว่า 20GB ไหม
+                    let drives = d.disk_info.split('|');
+                    drives.forEach(drive => {
+                        let isLow = false;
+                        const match = drive.match(/Free\s+([0-9.]+)\s*GB/i);
+                        if(match && parseFloat(match[1]) < 20.0) isLow = true; // Alert ถ้าเหลือน้อยกว่า 20GB
+                        
+                        diskDisplay += `<div class="text-[10px] ${isLow ? 'text-red-600 font-bold animate-pulse' : 'text-gray-500'}"><i class="fas fa-hdd"></i> ${drive}</div>`;
+                    });
+                }
+                // -----------------------
+
                 let sysInfo = `<div class="text-xs space-y-1"><div class="flex items-center"><i class="fas fa-network-wired w-4 text-indigo-500"></i> <span class="font-mono font-bold text-indigo-700">${d.ip}</span></div>`;
                 sysInfo += `<div class="flex items-center gap-2"><span class="text-gray-600 font-bold">CPU:</span> ${d.cpu} ${tempDisp} | <span class="text-gray-600 font-bold">RAM:</span> ${d.ram}</div>`;
+                sysInfo += diskDisplay; // แสดง HDD พร้อม Alert
                 sysInfo += `<div class="truncate max-w-[150px] text-[10px] text-gray-500"><i class="fas fa-wifi text-blue-400"></i> <b>${d.wifi_ssid||'LAN'}</b> (${d.isp||'-'})</div>`;
                 sysInfo += `<div class="text-[9px] text-gray-400 font-mono"><i class="fas fa-broadcast-tower"></i> ${d.wifi_bssid||'-'}</div></div>`;
 
@@ -255,7 +273,7 @@
             });
         }
 
-        // ✅ จุดสำคัญ: ฟังก์ชัน openDetails ที่มีโค้ดตัดชื่อ CPU
+        // ✅ ฟังก์ชันแสดงรายละเอียด (แก้ให้โชว์พื้นที่ HDD)
         function openDetails(h) {
             const d = globalDevices.find(x => x.hostname === h);
             
@@ -263,18 +281,32 @@
             document.getElementById('det-hostname').innerText = h;
             document.getElementById('det-model-full').innerText = ((d.brand || '') + ' ' + (d.model || '')).trim() || 'Unknown Model';
             
-            // ✅ ตัดคำ CPU ให้สั้น
+            // ตัดคำ CPU
             let cpuClean = d.cpu_model || '-';
             cpuClean = cpuClean.replace(/Intel\(R\)|Core\(TM\)|CPU|@/gi, '').replace(/\d+\.\d+GHz/gi, '').trim();
             document.getElementById('det-cpu').innerText = cpuClean;
             
+            // RAM
             let ramShow = d.ram_total || '-';
             if (d.ram_type && d.ram_type !== 'Unknown') ramShow = `${d.ram_type} | ${ramShow}`;
             document.getElementById('det-ram').innerText = ramShow;
             
             document.getElementById('det-gpu').innerText = d.gpu || '-';
-            // ✅ แสดง Storage
-            document.getElementById('det-storage').innerText = d.storage_model || '-';
+            
+            // ✅ Storage Model (ชื่อรุ่น)
+            document.getElementById('det-storage-model').innerText = d.storage_model || '-';
+            
+            // ✅ Disk Usage (พื้นที่คงเหลือ) - ถ้ามีหลาย Drive จะขึ้นบรรทัดใหม่
+            let diskUsageHtml = '-';
+            if (d.disk_info && d.disk_info !== 'Unknown') {
+                diskUsageHtml = d.disk_info.split('|').map(drive => {
+                    const match = drive.match(/Free\s+([0-9.]+)\s*GB/i);
+                    const isLow = match && parseFloat(match[1]) < 20.0;
+                    return `<div class="${isLow ? 'text-red-600 font-bold' : ''}">${drive}</div>`;
+                }).join('');
+            }
+            document.getElementById('det-disk-usage').innerHTML = diskUsageHtml;
+
             document.getElementById('det-os').innerText = d.os || '-';
             document.getElementById('det-ip').innerText = d.ip || '-';
             document.getElementById('det-mac').innerText = d.mac_address || '-';
