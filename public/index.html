@@ -22,8 +22,8 @@
     <div id="loginModal" class="fixed inset-0 bg-slate-900 z-[60] flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
             <h2 class="text-2xl font-bold mb-6 text-gray-800">IT Monitor Login</h2>
-            <input type="text" id="username" placeholder="Username" class="w-full p-3 border mb-4 rounded" onkeypress="handleEnter(event, 'password')">
-            <input type="password" id="password" placeholder="Password" class="w-full p-3 border mb-6 rounded" onkeypress="handleEnter(event, 'login')">
+            <input type="text" id="username" placeholder="Username" class="w-full p-3 border mb-4 rounded" onkeyup="handleEnter(event, 'password')">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 border mb-6 rounded" onkeyup="handleEnter(event, 'login')">
             <button onclick="login()" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 active:scale-95 transition">LOGIN</button>
         </div>
     </div>
@@ -117,7 +117,311 @@
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">GPU</span><span class="col-span-2 font-medium" id="det-gpu">-</span></div>
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">Storage</span><span class="col-span-2 font-medium" id="det-storage-model">-</span></div>
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">Disk Usage</span><span class="col-span-2 font-medium" id="det-disk-usage">-</span></div>
-                    
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">OS</span><span class="col-span-2 font-medium" id="det-os">-</span></div>
                     <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">IP</span><span class="col-span-2 font-mono text-indigo-600" id="det-ip">-</span></div>
-                    <div class="grid grid-cols-3 border-b
+                    <div class="grid grid-cols-3 border-b pb-2"><span class="text-gray-500">MAC</span><span class="col-span-2 font-mono" id="det-mac">-</span></div>
+                    <div class="grid grid-cols-3 pt-2"><span class="text-gray-500 font-bold">Serial</span><span class="col-span-2 font-mono font-bold" id="det-serial">-</span></div>
+                </div>
+                <div class="mt-4 text-right"><button onclick="document.getElementById('detailsModal').classList.add('hidden')" class="bg-gray-200 px-4 py-2 rounded">Close</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="userModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
+            <h3 class="font-bold mb-4" id="userModalTitle">User</h3>
+            <input type="hidden" id="userId">
+            <input type="text" id="formUser" class="w-full border p-2 rounded mb-2" placeholder="Username">
+            <input type="password" id="formPass" class="w-full border p-2 rounded mb-2" placeholder="Password">
+            <select id="formRole" class="w-full border p-2 rounded mb-4" onchange="togglePerms()"><option value="staff">Staff</option><option value="admin">Admin</option></select>
+            <div id="permSection" class="space-y-2 mb-4 p-2 border rounded bg-gray-50">
+                <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="edit_device"> Edit</label>
+                <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="control_device"> Control</label>
+                <label class="flex items-center"><input type="checkbox" class="perm-chk mr-2" value="delete_device"> Delete</label>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('userModal').classList.add('hidden')" class="bg-gray-200 px-4 py-2 rounded">Cancel</button>
+                <button onclick="saveUser()" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg w-full max-w-sm shadow-xl">
+            <h3 class="font-bold mb-4">Edit Device</h3>
+            <input type="hidden" id="editHostname">
+            <input type="text" id="editName" class="w-full border p-2 rounded mb-2 text-sm" placeholder="Friendly Name">
+            <input type="text" id="editGroup" class="w-full border p-2 rounded mb-2 text-sm" placeholder="Group">
+            <input type="text" id="editLocation" class="w-full border p-2 rounded mb-2 text-sm" placeholder="Location Name">
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <input type="text" id="editLat" class="border p-2 rounded text-sm" placeholder="Lat">
+                <input type="text" id="editLon" class="border p-2 rounded text-sm" placeholder="Lon">
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('editModal').classList.add('hidden')" class="bg-gray-200 py-2 px-4 rounded">Cancel</button>
+                <button onclick="saveDevice()" class="bg-blue-600 text-white py-2 px-4 rounded">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screenModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-[70] flex items-center justify-center p-2">
+        <div class="bg-white p-2 rounded-lg w-full max-w-5xl h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-2 px-2">
+                <h3 class="font-bold">Remote View <span class="text-xs font-normal text-gray-400">(Click to zoom)</span></h3>
+                <div><button onclick="refreshScreen()" class="bg-blue-600 text-white px-2 py-1 rounded text-xs mr-2">New Cap</button><button onclick="document.getElementById('screenModal').classList.add('hidden')" class="bg-gray-300 px-2 py-1 rounded text-xs">Close</button></div>
+            </div>
+            <div id="screenContainer" class="flex-1 bg-gray-200 rounded overflow-auto flex justify-center items-start relative"><span class="mt-10 text-gray-500 animate-pulse">Requesting...</span></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "/api"; 
+        let globalDevices=[], globalUsers=[], currentUser=null, currentGroupFilter='ALL', currentStatusFilter='ALL', currentViewingHost=null;
+        let logoutTimer; const AUTO_LOGOUT_TIME = 30 * 60 * 1000;
+
+        function toggleSidebar() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); if(s.classList.contains('-translate-x-full')) { s.classList.remove('-translate-x-full'); o.classList.remove('hidden'); } else { s.classList.add('-translate-x-full'); o.classList.add('hidden'); } }
+        
+        // ✅ 1. ฟังก์ชัน Login + Enter Key
+        function handleEnter(e, nextAction) {
+            if(e.key === 'Enter') {
+                if(nextAction === 'password') document.getElementById('password').focus();
+                else if(nextAction === 'login') login();
+            }
+        }
+
+        async function login() { 
+            try {
+                const u = document.getElementById('username').value;
+                const p = document.getElementById('password').value;
+                if(!u || !p) return alert("Please enter username and password");
+
+                const res = await fetch(`${API_URL}/login`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type':'application/json'}, 
+                    body: JSON.stringify({username: u, password: p}) 
+                });
+                
+                if(res.ok) { 
+                    const data = await res.json(); 
+                    localStorage.setItem('token', data.token); 
+                    currentUser = { username: u, role: data.role, permissions: data.permissions }; 
+                    localStorage.setItem('userConfig', JSON.stringify(currentUser)); 
+                    initSystem(); 
+                } else {
+                    alert("Login Failed: Incorrect username or password");
+                }
+            } catch(e) { 
+                console.error(e);
+                alert("Login Error: Cannot connect to server"); 
+            }
+        }
+
+        function logout() { clearTimeout(logoutTimer); localStorage.clear(); location.reload(); }
+        
+        function initSystem() {
+            const token = localStorage.getItem('token');
+            if(token && localStorage.getItem('userConfig')) {
+                currentUser = JSON.parse(localStorage.getItem('userConfig'));
+                document.getElementById('loginModal').classList.add('hidden'); 
+                document.getElementById('dashboardContent').classList.remove('hidden');
+                document.getElementById('currentUserDisplay').innerText = currentUser.username;
+                
+                if(currentUser.role==='admin' || (currentUser.permissions && currentUser.permissions.includes('manage_users'))) {
+                    document.getElementById('menu-users').classList.remove('hidden');
+                }
+                
+                startAutoLogout(); 
+                fetchDevices(); 
+                setInterval(fetchDevices, 5000);
+            }
+        }
+        function startAutoLogout() { ['mousemove','click','keypress'].forEach(e => document.addEventListener(e, () => { clearTimeout(logoutTimer); if(localStorage.getItem('token')) logoutTimer = setTimeout(() => { alert("Timeout"); logout(); }, AUTO_LOGOUT_TIME); })); }
+        
+        function switchView(v) { 
+            document.getElementById('view-dashboard').classList.add('hidden'); 
+            document.getElementById('view-users').classList.add('hidden'); 
+            document.getElementById(`view-${v}`).classList.remove('hidden'); 
+            if(v==='users') fetchUsers(); 
+            toggleSidebar(); 
+        }
+        
+        // ✅ 2. ฟังก์ชัน Fetch Users (ที่เคยหายไป) กลับมาแล้ว
+        async function fetchUsers() { 
+            try {
+                const res = await fetch(`${API_URL}/users`, {headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); 
+                if(res.ok) { 
+                    globalUsers = await res.json();
+                    document.getElementById('userTable').innerHTML = globalUsers.map(u=>`
+                        <tr class="hover:bg-gray-50 border-b">
+                            <td class="px-6 py-4 font-bold text-gray-700">${u.username}</td>
+                            <td class="px-6 py-4"><span class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs">${u.role}</span></td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="openUserModal('${u._id}')" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i> Edit</button>
+                                ${u.username !== 'admin' ? `<button onclick="delUser('${u._id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i> Del</button>` : ''}
+                            </td>
+                        </tr>
+                    `).join(''); 
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function fetchDevices() {
+            try {
+                const res = await fetch(`${API_URL}/devices`, { headers: {'Authorization':`Bearer ${localStorage.getItem('token')}`} });
+                if(res.ok) {
+                    globalDevices = await res.json();
+                    const groups = [...new Set(globalDevices.map(d=>d.group||'Unassigned'))].sort();
+                    document.getElementById('groupList').innerHTML = groups.map(g=>`<button onclick="filterGroup('${g}')" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-sm text-gray-300">${g}</button>`).join('');
+                    renderTable(); updateCounts();
+                    if(currentViewingHost) {
+                        const t = globalDevices.find(d=>d.hostname===currentViewingHost);
+                        if(t && t.screenshot) {
+                            const c = document.getElementById('screenContainer');
+                            if(!c.querySelector('img')) c.innerHTML = `<img src="data:image/jpeg;base64,${t.screenshot}" class="zoom-in max-w-full h-auto shadow-lg" onclick="toggleZoom(this)">`;
+                            else c.querySelector('img').src = `data:image/jpeg;base64,${t.screenshot}`;
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function updateCounts() { 
+            if(!globalDevices) return;
+            document.getElementById('totalCount').innerText = globalDevices.length; 
+            document.getElementById('onlineCount').innerText = globalDevices.filter(d=>d.status==='online').length; 
+            document.getElementById('offlineCount').innerText = globalDevices.filter(d=>d.status!=='online').length; 
+        }
+        function filterGroup(g) { currentGroupFilter = g; renderTable(); }
+        function filterStatus(s) { currentStatusFilter = s; ['ALL','online','offline'].forEach(x => document.getElementById(`card-${x}`).classList.toggle('card-active', x===s)); renderTable(); }
+
+        function renderTable() {
+            const tbody = document.getElementById('deviceTable'); tbody.innerHTML = '';
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = globalDevices.filter(d => {
+                const gMatch = currentGroupFilter==='ALL' || (d.group||'Unassigned')===currentGroupFilter;
+                const sMatch = currentStatusFilter==='ALL' || (currentStatusFilter==='online' ? d.status==='online' : d.status!=='online');
+                return gMatch && sMatch && (d.hostname+d.friendlyName+d.ip).toLowerCase().includes(search);
+            });
+            document.getElementById('filterLabel').innerText = `(${currentGroupFilter})`;
+
+            filtered.forEach(d => {
+                const isOnline = d.status==='online';
+                const statusBadge = isOnline ? `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">ONLINE</span>` : `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">OFFLINE</span>`;
+                let tempDisp = d.cpu_temp ? (d.cpu_temp>=80 ? `<span class="text-red-600 font-bold animate-pulse">${d.cpu_temp}°C</span>` : `<span class="text-green-600">${d.cpu_temp}°C</span>`) : '';
+                
+                let diskDisplay = "";
+                if(d.disk_info && d.disk_info !== 'Unknown') {
+                    let drives = d.disk_info.split('|');
+                    drives.forEach(drive => {
+                        let isLow = false;
+                        const match = drive.match(/Free\s+([0-9.]+)\s*GB/i);
+                        if(match && parseFloat(match[1]) < 20.0) isLow = true;
+                        diskDisplay += `<div class="text-[10px] ${isLow ? 'text-red-600 font-bold animate-pulse' : 'text-gray-500'}"><i class="fas fa-hdd"></i> ${drive}</div>`;
+                    });
+                }
+
+                let sysInfo = `<div class="text-xs space-y-1"><div class="flex items-center"><i class="fas fa-network-wired w-4 text-indigo-500"></i> <span class="font-mono font-bold text-indigo-700">${d.ip}</span></div>`;
+                sysInfo += `<div class="flex items-center gap-2"><span class="text-gray-600 font-bold">CPU:</span> ${d.cpu} ${tempDisp} | <span class="text-gray-600 font-bold">RAM:</span> ${d.ram}</div>`;
+                sysInfo += diskDisplay; 
+                sysInfo += `<div class="truncate max-w-[150px] text-[10px] text-gray-500"><i class="fas fa-wifi text-blue-400"></i> <b>${d.wifi_ssid||'LAN'}</b> (${d.isp||'-'})</div>`;
+                sysInfo += `<div class="text-[9px] text-gray-400 font-mono"><i class="fas fa-broadcast-tower"></i> ${d.wifi_bssid||'-'}</div></div>`;
+
+                let btns = `<div class="flex justify-center gap-1"><button onclick="openDetails('${d.hostname}')" class="text-blue-600 bg-blue-50 p-2 rounded"><i class="fas fa-info-circle"></i></button>`;
+                if(hasPerm('edit_device')) btns += `<button onclick="openEdit('${d.hostname}')" class="text-gray-500 bg-gray-100 p-2 rounded"><i class="fas fa-edit"></i></button>`;
+                if(hasPerm('control_device') && isOnline) btns += `<button onclick="cmd('${d.hostname}','reboot')" class="text-orange-500 bg-orange-50 p-2 rounded"><i class="fas fa-sync"></i></button><button onclick="cmd('${d.hostname}','shutdown')" class="text-red-500 bg-red-50 p-2 rounded"><i class="fas fa-power-off"></i></button><button onclick="reqScreen('${d.hostname}')" class="text-purple-500 bg-purple-50 p-2 rounded"><i class="fas fa-eye"></i></button>`;
+                if(hasPerm('delete_device')) btns += `<button onclick="delDev('${d.hostname}')" class="text-red-400 bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>`;
+                btns += `</div>`;
+
+                tbody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 align-top">${statusBadge}<div class="mt-1 text-xs">${d.connection_type==='local'?'🏢 Local':'☁️ Net'}</div></td><td class="px-4 py-3 align-top"><div class="font-bold text-sm">${d.friendlyName||d.hostname}</div><div class="text-xs text-gray-400 font-mono">${d.hostname}</div></td><td class="px-4 py-3 align-top text-xs">${d.group||'-'}<br>${d.location||'-'}</td><td class="px-4 py-3 align-top">${sysInfo}</td><td class="px-4 py-3 align-top text-center">${btns}</td></tr>`;
+            });
+        }
+
+        function openDetails(h) {
+            const d = globalDevices.find(x => x.hostname === h);
+            document.getElementById('det-friendlyName').innerText = d.friendlyName || 'Unknown';
+            document.getElementById('det-hostname').innerText = h;
+            document.getElementById('det-model-full').innerText = ((d.brand || '') + ' ' + (d.model || '')).trim() || 'Unknown Model';
+            
+            // Show Full CPU Name
+            document.getElementById('det-cpu').innerText = d.cpu_model || '-';
+            
+            let ramShow = d.ram_total || '-';
+            if (d.ram_type && d.ram_type !== 'Unknown') ramShow = `${d.ram_type} | ${ramShow}`;
+            document.getElementById('det-ram').innerText = ramShow;
+            
+            document.getElementById('det-gpu').innerText = d.gpu || '-';
+            document.getElementById('det-storage-model').innerText = d.storage_model || '-';
+            
+            let diskUsageHtml = '-';
+            if (d.disk_info && d.disk_info !== 'Unknown') {
+                diskUsageHtml = d.disk_info.split('|').map(drive => {
+                    const match = drive.match(/Free\s+([0-9.]+)\s*GB/i);
+                    const isLow = match && parseFloat(match[1]) < 20.0;
+                    return `<div class="${isLow ? 'text-red-600 font-bold' : ''}">${drive}</div>`;
+                }).join('');
+            }
+            document.getElementById('det-disk-usage').innerHTML = diskUsageHtml;
+
+            document.getElementById('det-os').innerText = d.os || '-';
+            document.getElementById('det-ip').innerText = d.ip || '-';
+            document.getElementById('det-mac').innerText = d.mac_address || '-';
+            document.getElementById('det-serial').innerText = d.serial_number || '-';
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        function hasPerm(p) { return currentUser && (currentUser.role==='admin' || (currentUser.permissions && currentUser.permissions.includes(p))); }
+        function toggleZoom(img) { img.classList.toggle('zoom-in'); img.classList.toggle('zoom-out'); img.classList.toggle('max-w-full'); img.classList.toggle('h-auto'); }
+        async function cmd(h,c) { if(confirm(`${c}?`)) await fetch(`${API_URL}/devices/command`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`},body:JSON.stringify({hostname:h,command:c})}); }
+        async function reqScreen(h) { currentViewingHost=h; document.getElementById('screenModal').classList.remove('hidden'); document.getElementById('screenContainer').innerHTML='<span class="animate-pulse mt-10">Waiting...</span>'; await cmd(h,'screenshot'); }
+        function refreshScreen() { if(currentViewingHost) reqScreen(currentViewingHost); }
+        
+        function openEdit(h) { 
+            const d = globalDevices.find(x=>x.hostname===h); 
+            document.getElementById('editHostname').value=h; 
+            document.getElementById('editName').value=d.friendlyName||''; 
+            document.getElementById('editGroup').value=d.group||''; 
+            document.getElementById('editLocation').value=d.location||'';
+            document.getElementById('editLat').value=d.lat||'';
+            document.getElementById('editLon').value=d.lon||'';
+            document.getElementById('editModal').classList.remove('hidden'); 
+        }
+        async function saveDevice() { 
+            await fetch(`${API_URL}/devices/update`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`},
+            body:JSON.stringify({hostname:document.getElementById('editHostname').value, friendlyName:document.getElementById('editName').value, group:document.getElementById('editGroup').value, location:document.getElementById('editLocation').value, lat:document.getElementById('editLat').value, lon:document.getElementById('editLon').value})});
+            document.getElementById('editModal').classList.add('hidden'); fetchDevices();
+        }
+        async function delDev(h) { if(confirm("Delete?")) { await fetch(`${API_URL}/devices/${h}`,{method:'DELETE',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); fetchDevices(); } }
+
+        function openUserModal(id) { 
+            document.getElementById('userModal').classList.remove('hidden'); 
+            const t = document.getElementById('userModalTitle');
+            if(id) {
+                const u = globalUsers.find(x=>x._id===id); 
+                t.innerText="Edit"; 
+                document.getElementById('userId').value=u._id; 
+                document.getElementById('formUser').value=u.username; 
+                document.getElementById('formUser').disabled=true; 
+                document.getElementById('formRole').value=u.role; 
+                document.querySelectorAll('.perm-chk').forEach(c=>c.checked=(u.permissions||[]).includes(c.value));
+            } else {
+                t.innerText="Add"; 
+                document.getElementById('userId').value=""; 
+                document.getElementById('formUser').value=""; 
+                document.getElementById('formUser').disabled=false; 
+                document.getElementById('formRole').value="staff"; 
+                document.querySelectorAll('.perm-chk').forEach(c=>c.checked=false);
+            }
+            togglePerms();
+        }
+        function togglePerms() { document.getElementById('permSection').classList.toggle('opacity-50', document.getElementById('formRole').value==='admin'); }
+        async function saveUser() {
+            const id = document.getElementById('userId').value; const method = id?'PUT':'POST'; const url = id?`${API_URL}/users/${id}`:`${API_URL}/users`;
+            await fetch(url, {method, headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`}, 
+            body:JSON.stringify({username:document.getElementById('formUser').value, password:document.getElementById('formPass').value, role:document.getElementById('formRole').value, permissions:Array.from(document.querySelectorAll('.perm-chk:checked')).map(c=>c.value)})});
+            document.getElementById('userModal').classList.add('hidden'); fetchUsers();
+        }
+        async function delUser(id) { if(confirm("Delete?")) { await fetch(`${API_URL}/users/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); fetchUsers(); } }
+        function exportToExcel() { const d=globalDevices.map(x=>({Name:x.friendlyName, IP:x.ip})); const w=XLSX.utils.json_to_sheet(d); const b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"Report.xlsx"); }
+    </script>
+</body>
+</html>
