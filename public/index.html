@@ -421,7 +421,50 @@
             document.getElementById('userModal').classList.add('hidden'); fetchUsers();
         }
         async function delUser(id) { if(confirm("Delete?")) { await fetch(`${API_URL}/users/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${localStorage.getItem('token')}`}}); fetchUsers(); } }
-        function exportToExcel() { const d=globalDevices.map(x=>({Name:x.friendlyName, IP:x.ip})); const w=XLSX.utils.json_to_sheet(d); const b=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b,w,"Data"); XLSX.writeFile(b,"Report.xlsx"); }
+        // ✅ ฟังก์ชัน Export Excel ฉบับสมบูรณ์ (ดึงครบทุก Field)
+        function exportToExcel() { 
+            // แปลงข้อมูลจาก globalDevices ให้เป็น Format ที่สวยงามสำหรับ Excel
+            const d = globalDevices.map(x => ({
+                "Status": x.status ? x.status.toUpperCase() : 'OFFLINE',
+                "Hostname": x.hostname,
+                "Friendly Name": x.friendlyName || '-',
+                "Group": x.group || '-',
+                "Location": x.location || '-',
+                "IP Address": x.ip,
+                "Public IP": x.public_ip || '-',
+                "MAC Address": x.mac_address || '-',
+                "Brand": x.brand || '-',
+                "Model": x.model || '-',
+                "OS": x.os || '-',
+                "CPU": x.cpu_model || '-',
+                "RAM Total": x.ram_total || '-',
+                "RAM Type": x.ram_type || '-',
+                "GPU": x.gpu || '-',
+                "Storage Model": x.storage_model || '-',
+                "Disk Usage": x.disk_info || '-',
+                "Serial Number": x.serial_number || '-',
+                "Wifi SSID": x.wifi_ssid || '-',
+                "Last Seen": x.last_seen ? new Date(x.last_seen).toLocaleString() : '-'
+            }));
+
+            // สร้าง Workbook และ Download
+            const w = XLSX.utils.json_to_sheet(d); 
+            
+            // ปรับความกว้างคอลัมน์นิดหน่อยให้สวยงาม (Optional)
+            w['!cols'] = [
+                {wch: 10}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 15}, 
+                {wch: 15}, {wch: 15}, {wch: 18}, {wch: 15}, {wch: 20}, 
+                {wch: 30}, {wch: 30}, {wch: 10}, {wch: 10}, {wch: 25}, 
+                {wch: 25}, {wch: 30}, {wch: 20}, {wch: 15}, {wch: 20}
+            ];
+
+            const b = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(b, w, "Device Report"); 
+            
+            // ตั้งชื่อไฟล์ตามวันเวลาปัจจุบัน
+            const fileName = `IT_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(b, fileName); 
+        }
     </script>
 </body>
 </html>
